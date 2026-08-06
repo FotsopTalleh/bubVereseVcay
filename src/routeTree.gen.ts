@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminOrganizersRouteImport } from './routes/admin.organizers'
 import { Route as PlannerIndexRouteImport } from './routes/planner.index'
 import { Route as PlannerEventsRouteImport } from './routes/planner.events'
@@ -44,6 +45,11 @@ const PlannerRoute = PlannerRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEventsRoute = AdminEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrganizersRoute = AdminOrganizersRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/planner': typeof PlannerRouteWithChildren
+  '/admin/events': typeof AdminEventsRoute
   '/admin/organizers': typeof AdminOrganizersRoute
   '/planner/events': typeof PlannerEventsRoute
   '/planner/new-event': typeof PlannerNewEventRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin/events': typeof AdminEventsRoute
   '/admin/organizers': typeof AdminOrganizersRoute
   '/planner/events': typeof PlannerEventsRoute
   '/planner/new-event': typeof PlannerNewEventRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/planner': typeof PlannerRouteWithChildren
+  '/admin/events': typeof AdminEventsRoute
   '/admin/organizers': typeof AdminOrganizersRoute
   '/planner/events': typeof PlannerEventsRoute
   '/planner/new-event': typeof PlannerNewEventRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/planner'
+    | '/admin/events'
     | '/admin/organizers'
     | '/planner/events'
     | '/planner/new-event'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/admin/events'
     | '/admin/organizers'
     | '/planner/events'
     | '/planner/new-event'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/planner'
+    | '/admin/events'
     | '/admin/organizers'
     | '/planner/events'
     | '/planner/new-event'
@@ -199,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/events': {
+      id: '/admin/events'
+      path: '/events'
+      fullPath: '/admin/events'
+      preLoaderRoute: typeof AdminEventsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/organizers': {
       id: '/admin/organizers'
       path: '/organizers'
@@ -245,11 +264,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminEventsRoute: typeof AdminEventsRoute
   AdminOrganizersRoute: typeof AdminOrganizersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminEventsRoute: AdminEventsRoute,
   AdminOrganizersRoute: AdminOrganizersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
