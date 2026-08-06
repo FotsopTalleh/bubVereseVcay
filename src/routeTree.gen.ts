@@ -13,6 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as PlannerIndexRouteImport } from './routes/planner.index'
+import { Route as PlannerEventsRouteImport } from './routes/planner.events'
+import { Route as PlannerNewEventRouteImport } from './routes/planner.new-event'
+import { Route as PlannerProfileRouteImport } from './routes/planner.profile'
+import { Route as PlannerEditEventIdRouteImport } from './routes/planner.edit.$eventId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,31 +38,87 @@ const PlannerIndexRoute = PlannerIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PlannerRoute,
 } as any)
+const PlannerEventsRoute = PlannerEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => PlannerRoute,
+} as any)
+const PlannerNewEventRoute = PlannerNewEventRouteImport.update({
+  id: '/new-event',
+  path: '/new-event',
+  getParentRoute: () => PlannerRoute,
+} as any)
+const PlannerProfileRoute = PlannerProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => PlannerRoute,
+} as any)
+const PlannerEditEventIdRoute = PlannerEditEventIdRouteImport.update({
+  id: '/edit/$eventId',
+  path: '/edit/$eventId',
+  getParentRoute: () => PlannerRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/planner': typeof PlannerRouteWithChildren
+  '/planner/events': typeof PlannerEventsRoute
+  '/planner/new-event': typeof PlannerNewEventRoute
+  '/planner/profile': typeof PlannerProfileRoute
   '/planner/': typeof PlannerIndexRoute
+  '/planner/edit/$eventId': typeof PlannerEditEventIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/planner/events': typeof PlannerEventsRoute
+  '/planner/new-event': typeof PlannerNewEventRoute
+  '/planner/profile': typeof PlannerProfileRoute
   '/planner': typeof PlannerIndexRoute
+  '/planner/edit/$eventId': typeof PlannerEditEventIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/planner': typeof PlannerRouteWithChildren
+  '/planner/events': typeof PlannerEventsRoute
+  '/planner/new-event': typeof PlannerNewEventRoute
+  '/planner/profile': typeof PlannerProfileRoute
   '/planner/': typeof PlannerIndexRoute
+  '/planner/edit/$eventId': typeof PlannerEditEventIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/planner' | '/planner/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/planner'
+    | '/planner/events'
+    | '/planner/new-event'
+    | '/planner/profile'
+    | '/planner/'
+    | '/planner/edit/$eventId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/planner'
-  id: '__root__' | '/' | '/auth' | '/planner' | '/planner/'
+  to:
+    | '/'
+    | '/auth'
+    | '/planner/events'
+    | '/planner/new-event'
+    | '/planner/profile'
+    | '/planner'
+    | '/planner/edit/$eventId'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/planner'
+    | '/planner/events'
+    | '/planner/new-event'
+    | '/planner/profile'
+    | '/planner/'
+    | '/planner/edit/$eventId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -97,15 +157,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlannerIndexRouteImport
       parentRoute: typeof PlannerRoute
     }
+    '/planner/events': {
+      id: '/planner/events'
+      path: '/events'
+      fullPath: '/planner/events'
+      preLoaderRoute: typeof PlannerEventsRouteImport
+      parentRoute: typeof PlannerRoute
+    }
+    '/planner/new-event': {
+      id: '/planner/new-event'
+      path: '/new-event'
+      fullPath: '/planner/new-event'
+      preLoaderRoute: typeof PlannerNewEventRouteImport
+      parentRoute: typeof PlannerRoute
+    }
+    '/planner/profile': {
+      id: '/planner/profile'
+      path: '/profile'
+      fullPath: '/planner/profile'
+      preLoaderRoute: typeof PlannerProfileRouteImport
+      parentRoute: typeof PlannerRoute
+    }
+    '/planner/edit/$eventId': {
+      id: '/planner/edit/$eventId'
+      path: '/edit/$eventId'
+      fullPath: '/planner/edit/$eventId'
+      preLoaderRoute: typeof PlannerEditEventIdRouteImport
+      parentRoute: typeof PlannerRoute
+    }
   }
 }
 
 interface PlannerRouteChildren {
+  PlannerEventsRoute: typeof PlannerEventsRoute
+  PlannerNewEventRoute: typeof PlannerNewEventRoute
+  PlannerProfileRoute: typeof PlannerProfileRoute
   PlannerIndexRoute: typeof PlannerIndexRoute
+  PlannerEditEventIdRoute: typeof PlannerEditEventIdRoute
 }
 
 const PlannerRouteChildren: PlannerRouteChildren = {
+  PlannerEventsRoute: PlannerEventsRoute,
+  PlannerNewEventRoute: PlannerNewEventRoute,
+  PlannerProfileRoute: PlannerProfileRoute,
   PlannerIndexRoute: PlannerIndexRoute,
+  PlannerEditEventIdRoute: PlannerEditEventIdRoute,
 }
 
 const PlannerRouteWithChildren =
