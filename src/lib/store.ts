@@ -80,13 +80,14 @@ function subscribe(listener: () => void) {
 }
 
 const getSnapshot = () => state;
+const serverState = initialState();
+const getServerSnapshot = () => serverState;
 
 export function useStore<T>(selector: (s: State) => T): T {
-  return useSyncExternalStore(
-    subscribe,
-    () => selector(getSnapshot()),
-    () => selector(initialState()),
-  );
+  // Selector runs on the snapshot during render so derived arrays/objects are
+  // allowed without breaking useSyncExternalStore's caching requirement.
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return selector(snapshot);
 }
 
 const nowIso = () => new Date().toISOString();
