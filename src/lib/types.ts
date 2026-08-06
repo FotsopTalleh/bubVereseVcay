@@ -47,11 +47,27 @@ export type Organizer = {
   id: string;
   name: string;
   email: string;
-  password: string;
   bio?: string;
   channels: ContactChannel[];
   showContactsPublicly: boolean;
   status: OrganizerStatus;
+  createdAt: string;
+};
+
+/** Limited organizer shape attached to public event responses — channels are
+ * only populated server-side when the organizer opted in to showing them. */
+export type PublicOrganizerSummary = {
+  id: string;
+  name: string;
+  bio?: string;
+  status: OrganizerStatus;
+  channels: ContactChannel[];
+  showContactsPublicly: boolean;
+};
+
+export type AdminAccount = {
+  id: string;
+  email: string;
   createdAt: string;
 };
 
@@ -60,7 +76,8 @@ export type EventStatus = "Published" | "Unpublished" | "Removed";
 export type EventRecord = {
   id: string;
   title: string;
-  image: string;
+  flyerImageUrl: string;
+  images: string[];
   description: string;
   category: Category;
   date: string;
@@ -89,7 +106,30 @@ export type ModerationLog = {
   at: string;
 };
 
-export type Session =
-  | { role: "planner"; organizerId: string }
-  | { role: "admin" }
-  | null;
+/**
+ * Lean shape for the public map's pin list — deliberately excludes
+ * description/venueName/address (fetched separately on expand) and
+ * pinClicks/directionClicks/status/history (never sent to public clients at
+ * all, not just hidden in the UI).
+ */
+export type EventPinSummary = {
+  id: string;
+  title: string;
+  category: Category;
+  flyerImageUrl: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  lat: number;
+  lng: number;
+  organizer: PublicOrganizerSummary | null;
+};
+
+/** Full detail fetched once a pin's preview card is expanded. */
+export type PublicEventDetail = EventPinSummary & {
+  description: string;
+  venueName: string;
+  address: string;
+  images: string[];
+  rating: number | null;
+};

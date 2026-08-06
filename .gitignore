@@ -20,6 +20,21 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+bu.json
+*firebase-adminsdk*.json
+*service-account*.json
+backend/secrets/
+
+# Python / backend
+backend/.venv/
+backend/venv/
+__pycache__/
+*.pyc
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

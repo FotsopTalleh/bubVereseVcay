@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { LogOut, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,27 +16,55 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { updateOrganizer, useStore } from "@/lib/store";
-import { CHANNEL_TYPES, type ChannelType, type ContactChannel } from "@/lib/types";
+import { api, ApiError } from "@/lib/api";
+import { clearSession } from "@/lib/session";
+import { CHANNEL_TYPES, type ChannelType, type ContactChannel, type Organizer } from "@/lib/types";
 
 export const Route = createFileRoute("/planner/profile")({
   component: PlannerProfile,
 });
 
 function PlannerProfile() {
-  const organizer = useStore((s) => {
-    const current = s.session;
-    return current?.role === "planner"
-      ? s.organizers.find((o) => o.id === current.organizerId)
-      : undefined;
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: organizer } = useQuery({
+    queryKey: ["planner-profile"],
+    queryFn: () => api.get<Organizer>("/planner/profile"),
   });
 
-  const [name, setName] = useState(organizer?.name ?? "");
-  const [bio, setBio] = useState(organizer?.bio ?? "");
-  const [channels, setChannels] = useState<ContactChannel[]>(organizer?.channels ?? []);
-  const [showPublicly, setShowPublicly] = useState(organizer?.showContactsPublicly ?? false);
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [channels, setChannels] = useState<ContactChannel[]>([]);
+  const [showPublicly, setShowPublicly] = useState(false);
   const [newType, setNewType] = useState<ChannelType>("Email");
   const [newValue, setNewValue] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (organizer && !hydrated) {
+      setName(organizer.name);
+      setBio(organizer.bio ?? "");
+      setChannels(organizer.channels);
+      setShowPublicly(organizer.showContactsPublicly);
+      setHydrated(true);
+    }
+  }, [organizer, hydrated]);
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      api.patch<Organizer>("/planner/profile", {
+        name,
+        bio,
+        channels,
+        showContactsPublicly: showPublicly,
+      }),
+    onSuccess: () => {
+      toast.success("Profile updated");
+      void queryClient.invalidateQueries({ queryKey: ["planner-profile"] });
+    },
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Could not update profile."),
+  });
 
   if (!organizer) return null;
 
@@ -48,13 +77,7 @@ function PlannerProfile() {
           toast.error("Keep at least one contact channel for verification.");
           return;
         }
-        updateOrganizer(organizer.id, {
-          name,
-          bio,
-          channels,
-          showContactsPublicly: showPublicly,
-        });
-        toast.success("Profile updated");
+        updateMutation.mutate();
       }}
     >
       <section className="space-y-4 rounded-2xl border bg-card p-5">
@@ -140,15 +163,29 @@ function PlannerProfile() {
           <Label htmlFor="public-contacts" className="text-sm font-normal">
             Show my first contact on the public event detail view
           </Label>
-          <Switch
-            id="public-contacts"
-            checked={showPublicly}
-            onCheckedChange={setShowPublicly}
-          />
+          <Switch id="public-contacts" checked={showPublicly} onCheckedChange={setShowPublicly} />
         </div>
       </section>
 
       <Button type="submit">Save profile</Button>
+
+      <div className="flex items-center justify-between rounded-2xl border bg-card p-5">
+        <div>
+          <p className="text-sm font-medium">Sign out</p>
+          <p className="text-xs text-muted-foreground">End your planner session on this device.</p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            clearSession();
+            void router.navigate({ to: "/auth" });
+          }}
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Sign out
+        </Button>
+      </div>
     </form>
   );
 }

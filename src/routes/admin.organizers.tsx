@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { deleteOrganizer, setOrganizerStatus, useStore } from "@/lib/store";
-import { ORGANIZER_STATUSES, type OrganizerStatus } from "@/lib/types";
+import { api, ApiError } from "@/lib/api";
+import {
+  ORGANIZER_STATUSES,
+  type EventRecord,
+  type Organizer,
+  type OrganizerStatus,
+} from "@/lib/types";
 
 export const Route = createFileRoute("/admin/organizers")({
   component: AdminOrganizers,
@@ -36,8 +42,42 @@ const statusVariant = (status: OrganizerStatus) =>
       : "secondary";
 
 function AdminOrganizers() {
-  const organizers = useStore((s) => s.organizers);
-  const events = useStore((s) => s.events);
+  const queryClient = useQueryClient();
+  const { data: organizers = [] } = useQuery({
+    queryKey: ["admin-organizers"],
+    queryFn: () => api.get<Organizer[]>("/admin/organizers"),
+  });
+  const { data: events = [] } = useQuery({
+    queryKey: ["admin-events"],
+    queryFn: () => api.get<EventRecord[]>("/admin/events"),
+  });
+
+  const invalidateAll = () => {
+    void queryClient.invalidateQueries({ queryKey: ["admin-organizers"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-analytics"] });
+  };
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: OrganizerStatus }) =>
+      api.patch(`/admin/organizers/${id}/status`, { status }),
+    onSuccess: (_data, variables) => {
+      toast.success(`Organizer set to ${variables.status}`);
+      invalidateAll();
+    },
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Could not update status."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/organizers/${id}`),
+    onSuccess: () => {
+      toast.success("Organizer deleted");
+      invalidateAll();
+    },
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Could not delete organizer."),
+  });
 
   return (
     <div className="space-y-3">
@@ -58,10 +98,9 @@ function AdminOrganizers() {
             <div className="flex items-center gap-2">
               <Select
                 value={organizer.status}
-                onValueChange={(value) => {
-                  setOrganizerStatus(organizer.id, value as OrganizerStatus);
-                  toast.success(`${organizer.name} set to ${value}`);
-                }}
+                onValueChange={(value) =>
+                  statusMutation.mutate({ id: organizer.id, status: value as OrganizerStatus })
+                }
               >
                 <SelectTrigger className="w-56" aria-label={`Status for ${organizer.name}`}>
                   <SelectValue />
@@ -85,18 +124,13 @@ function AdminOrganizers() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete {organizer.name}?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This permanently removes the organizer, all of their events and the
-                      associated interest data.
+                      This permanently removes the organizer, all of their events and the associated
+                      interest data.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        deleteOrganizer(organizer.id);
-                        toast.success("Organizer deleted");
-                      }}
-                    >
+                    <AlertDialogAction onClick={() => deleteMutation.mutate(organizer.id)}>
                       Delete permanently
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -106,9 +140,7 @@ function AdminOrganizers() {
           </div>
 
           <div className="mt-3 rounded-xl border bg-muted/40 p-3">
-            <p className="tracking-arch text-[10px] text-muted-foreground">
-              Verification contacts
-            </p>
+            <p className="tracking-arch text-[10px] text-muted-foreground">Verification contacts</p>
             <ul className="mt-2 space-y-1 text-sm">
               {organizer.channels.map((channel, index) => (
                 <li key={`${channel.type}-${index}`} className="flex gap-3">

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bar,
   BarChart,
@@ -13,19 +14,17 @@ import {
 } from "recharts";
 import { MousePointerClick, Navigation, CalendarCheck } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
-import { useStore } from "@/lib/store";
+import { api } from "@/lib/api";
+import type { EventRecord } from "@/lib/types";
 
 export const Route = createFileRoute("/planner/")({
   component: PlannerOverview,
 });
 
 function PlannerOverview() {
-  const session = useStore((s) => s.session);
-  const events = useStore((s) => {
-    const current = s.session;
-    return current?.role === "planner"
-      ? s.events.filter((e) => e.organizerId === current.organizerId)
-      : [];
+  const { data: events = [] } = useQuery({
+    queryKey: ["planner-events"],
+    queryFn: () => api.get<EventRecord[]>("/planner/events"),
   });
 
   const totals = events.reduce(
@@ -54,8 +53,6 @@ function PlannerOverview() {
     pinClicks: e.pinClicks,
     directionClicks: e.directionClicks,
   }));
-
-  if (session?.role !== "planner") return null;
 
   return (
     <div className="space-y-6">
@@ -134,7 +131,12 @@ function PlannerOverview() {
                   fontSize: 12,
                 }}
               />
-              <Bar dataKey="pinClicks" name="Pin clicks" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
+              <Bar
+                dataKey="pinClicks"
+                name="Pin clicks"
+                fill="var(--chart-1)"
+                radius={[6, 6, 0, 0]}
+              />
               <Bar
                 dataKey="directionClicks"
                 name="Direction clicks"

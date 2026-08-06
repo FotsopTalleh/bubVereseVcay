@@ -1,7 +1,10 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { DashboardShell, SignedOutNotice } from "@/components/DashboardShell";
+import { useQuery } from "@tanstack/react-query";
+import { SignedOutNotice } from "@/components/DashboardShell";
+import { PlannerShell } from "@/components/PlannerShell";
 import { useSession } from "@/hooks/useSession";
-import { useStore } from "@/lib/store";
+import { api } from "@/lib/api";
+import type { Organizer } from "@/lib/types";
 
 export const Route = createFileRoute("/planner")({
   head: () => ({
@@ -24,29 +27,23 @@ export const Route = createFileRoute("/planner")({
   component: PlannerLayout,
 });
 
-const NAV = [
-  { to: "/planner", label: "Overview" },
-  { to: "/planner/events", label: "My events" },
-  { to: "/planner/new-event", label: "New event" },
-  { to: "/planner/profile", label: "Profile" },
-];
-
 function PlannerLayout() {
   const { session, ready } = useSession();
-  const organizer = useStore((s) =>
-    session?.role === "planner" ? s.organizers.find((o) => o.id === session.organizerId) : undefined,
-  );
+  const isPlanner = session?.role === "planner";
+
+  const { data: organizer } = useQuery({
+    queryKey: ["planner-profile"],
+    queryFn: () => api.get<Organizer>("/planner/profile"),
+    enabled: ready && isPlanner,
+  });
 
   if (!ready) return null;
-  if (session?.role !== "planner" || !organizer) return <SignedOutNotice role="planner" />;
+  if (!isPlanner) return <SignedOutNotice role="planner" />;
+  if (!organizer) return null;
 
   return (
-    <DashboardShell
-      title={organizer.name}
-      subtitle={`Verification status: ${organizer.status}`}
-      nav={NAV}
-    >
+    <PlannerShell organizerName={organizer.name}>
       <Outlet />
-    </DashboardShell>
+    </PlannerShell>
   );
 }

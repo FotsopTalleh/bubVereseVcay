@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
-import { hydrateStore, useStore } from "@/lib/store";
-import type { Session } from "@/lib/types";
+import { hydrateSession, useSessionStore, type Session } from "@/lib/session";
 
-/** Client-side session hook for the prototype (no server auth yet). */
-export function useSession() {
-  const session = useStore((s) => s.session);
+export function useSession(): { session: Session; ready: boolean } {
+  const session = useSessionStore();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    hydrateStore();
+    hydrateSession();
     setReady(true);
   }, []);
 
-  return { session: session as Session, ready };
+  return { session, ready };
 }

@@ -1,160 +1,160 @@
 import { useEffect, useRef } from "react";
+import L from "leaflet";
 import {
-  Map as MapLibreMap,
+  MapContainer,
+  TileLayer,
   Marker,
-  NavigationControl,
-  GeolocateControl,
-  type StyleSpecification,
-} from "maplibre-gl";
-import Supercluster from "supercluster";
+  Polyline,
+  ZoomControl,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
+import "@/lib/leaflet-icon-fix";
 import { CATEGORY_ACCENT } from "@/lib/types";
-import type { EventRecord } from "@/lib/types";
+import type { EventPinSummary } from "@/lib/types";
+import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_URL, TILE_ATTRIBUTION } from "./mapConfig";
 
-export const DEFAULT_CENTER: [number, number] = [9.2871, 4.1568]; // Buea
+/** [south, west, north, east] — matches the backend's `bounds` query param order. */
+export type Bbox = [south: number, west: number, north: number, east: number];
 
-export const MAP_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    carto: {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    },
-  },
-  layers: [{ id: "carto", type: "raster", source: "carto" }],
-};
-
-type Props = {
-  events: EventRecord[];
+type Props<T extends EventPinSummary> = {
+  events: T[];
   activeId: string | null;
-  onSelect: (event: EventRecord) => void;
+  onSelect: (event: T) => void;
   center?: [number, number] | undefined;
+  onBoundsChange?: (bbox: Bbox) => void;
+  route?: [number, number][] | null;
+  userLocation?: [number, number] | undefined;
 };
 
-type PointProps = { eventId: string };
+function buildPinIcon(event: EventPinSummary, active: boolean) {
+  const accent = CATEGORY_ACCENT[event.category];
+  return L.divIcon({
+    html: `<div class="bv-pin" data-active="${active}" style="--pin-accent:${accent}"><img src="${event.flyerImageUrl}" alt="" loading="lazy" /></div>`,
+    className: "bv-pin-wrap",
+    iconSize: [46, 60],
+    iconAnchor: [23, 30],
+  });
+}
 
-export function EventMap({ events, activeId, onSelect, center }: Props) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const markersRef = useRef<Marker[]>([]);
-  const eventsRef = useRef(events);
-  const activeRef = useRef(activeId);
-  const selectRef = useRef(onSelect);
-  const renderRef = useRef<() => void>(() => {});
+function buildUserLocationIcon() {
+  return L.divIcon({
+    html: `<div class="bv-user-dot"><span class="bv-user-dot-pulse"></span></div>`,
+    className: "bv-user-dot-wrap",
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
+}
 
-  eventsRef.current = events;
-  activeRef.current = activeId;
-  selectRef.current = onSelect;
+function buildClusterIcon(cluster: { getChildCount: () => number }) {
+  return L.divIcon({
+    html: `<div class="bv-cluster">${cluster.getChildCount()}</div>`,
+    className: "bv-cluster-wrap",
+    iconSize: L.point(38, 38, true),
+  });
+}
+
+function BoundsWatcher({ onBoundsChange }: { onBoundsChange: ((bbox: Bbox) => void) | undefined }) {
+  const onBoundsChangeRef = useRef(onBoundsChange);
+  onBoundsChangeRef.current = onBoundsChange;
+
+  const map = useMapEvents({
+    moveend: () => emit(),
+    zoomend: () => emit(),
+  });
+
+  function emit() {
+    const b = map.getBounds();
+    onBoundsChangeRef.current?.([b.getSouth(), b.getWest(), b.getNorth(), b.getEast()]);
+  }
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    const map = new MapLibreMap({
-      container: containerRef.current,
-      style: MAP_STYLE,
-      center: center ?? DEFAULT_CENTER,
-      zoom: 11.5,
-      attributionControl: { compact: true },
-    });
-    map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
-    map.addControl(
-      new GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true,
-      }),
-      "bottom-right",
-    );
-    mapRef.current = map;
-
-    const rerender = () => renderRef.current();
-    map.on("load", rerender);
-    map.on("move", rerender);
-    map.on("zoom", rerender);
-
-    return () => {
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-      map.remove();
-      mapRef.current = null;
-    };
+    emit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Progressive rendering: only events inside the current viewport are drawn,
-  // clustered client-side so dense areas stay readable.
-  renderRef.current = () => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    const index = new Supercluster<PointProps>({ radius: 64, maxZoom: 17 });
-    index.load(
-      eventsRef.current.map((e) => ({
-        type: "Feature" as const,
-        properties: { eventId: e.id },
-        geometry: { type: "Point" as const, coordinates: [e.lng, e.lat] },
-      })),
-    );
-
-    const b = map.getBounds();
-    const clusters = index.getClusters(
-      [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()],
-      Math.round(map.getZoom()),
-    );
-
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = clusters.map((feature) => {
-      const [lng, lat] = feature.geometry.coordinates as [number, number];
-      const el = document.createElement("div");
-
-      if ("cluster" in feature.properties && feature.properties.cluster) {
-        const clusterId = feature.properties.cluster_id as number;
-        el.className = "bv-cluster";
-        el.textContent = String(feature.properties.point_count);
-        el.setAttribute("role", "button");
-        el.setAttribute("aria-label", `${feature.properties.point_count} events, zoom in`);
-        el.addEventListener("click", () => {
-          const zoom = index.getClusterExpansionZoom(clusterId);
-          map.easeTo({ center: [lng, lat], zoom, duration: 400 });
-        });
-      } else {
-        const event = eventsRef.current.find(
-          (e) => e.id === (feature.properties as PointProps).eventId,
-        );
-        if (!event) return new Marker({ element: el });
-        el.className = "bv-pin";
-        el.dataset["active"] = String(activeRef.current === event.id);
-        el.style.setProperty("--pin-accent", CATEGORY_ACCENT[event.category]);
-        el.setAttribute("role", "button");
-        el.setAttribute("aria-label", `${event.title}, ${event.category}`);
-        const img = document.createElement("img");
-        img.src = event.image;
-        img.alt = "";
-        img.loading = "lazy";
-        el.appendChild(img);
-        el.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          selectRef.current(event);
-        });
-      }
-
-      return new Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
-    });
-  };
-
-  useEffect(() => {
-    renderRef.current();
-  }, [events, activeId]);
-
-  useEffect(() => {
-    if (center && mapRef.current) {
-      mapRef.current.easeTo({ center, zoom: 13, duration: 600 });
-    }
-  }, [center]);
-
-  return <div ref={containerRef} className="absolute inset-0" />;
+  return null;
 }
+
+function Recenter({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, 13, { animate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center]);
+  return null;
+}
+
+function FitRoute({ route }: { route: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (route.length < 2) return;
+    map.fitBounds(L.latLngBounds(route.map(([lat, lng]) => L.latLng(lat, lng))), {
+      padding: [48, 48],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route]);
+  return null;
+}
+
+/** Full-screen public map: flyer-image pins, clustered, viewport-bounds reporting. */
+export function EventMap<T extends EventPinSummary>({
+  events,
+  activeId,
+  onSelect,
+  center,
+  onBoundsChange,
+  route,
+  userLocation,
+}: Props<T>) {
+  return (
+    <MapContainer
+      center={DEFAULT_CENTER}
+      zoom={DEFAULT_ZOOM}
+      zoomControl={false}
+      className="absolute inset-0 z-0"
+    >
+      <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+      <ZoomControl position="bottomright" />
+      <BoundsWatcher onBoundsChange={onBoundsChange} />
+      {center && <Recenter center={center} />}
+      {userLocation && (
+        <Marker
+          position={userLocation}
+          icon={buildUserLocationIcon()}
+          interactive={false}
+          zIndexOffset={1000}
+        />
+      )}
+      {route && route.length > 1 && (
+        <>
+          <Polyline
+            positions={route}
+            pathOptions={{ color: "var(--color-primary)", weight: 5, opacity: 0.85 }}
+          />
+          <FitRoute route={route} />
+        </>
+      )}
+      <MarkerClusterGroup
+        chunkedLoading
+        maxClusterRadius={60}
+        iconCreateFunction={buildClusterIcon}
+      >
+        {events.map((event) => (
+          <Marker
+            key={event.id}
+            position={[event.lat, event.lng]}
+            icon={buildPinIcon(event, event.id === activeId)}
+            eventHandlers={{ click: () => onSelect(event) }}
+          />
+        ))}
+      </MarkerClusterGroup>
+    </MapContainer>
+  );
+}
+
+// Default export so it can be `React.lazy`-loaded — this module (and its
+// leaflet/react-leaflet imports) must never be pulled into the SSR bundle,
+// since Leaflet touches `window` at module-evaluation time. See PublicEventMap.tsx.
+export default EventMap;

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardFooter, Wordmark } from "@/components/brand";
-import { logout } from "@/lib/store";
+import { clearSession } from "@/lib/session";
 
 type NavItem = { to: string; label: string };
 
@@ -46,7 +46,7 @@ export function DashboardShell({
             variant="ghost"
             size="sm"
             onClick={() => {
-              logout();
+              clearSession();
               void router.navigate({ to: "/auth" });
             }}
           >

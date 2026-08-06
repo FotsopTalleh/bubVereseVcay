@@ -1,26 +1,54 @@
-# Pixel Perfect Prototype
+# BubVerseVacy
 
-Implement exactly the screenshot and nothing else
+Map-first event discovery. Events surface as flyer-image pins on a live map — no
+account needed to browse, filter, search or get directions. Event planners sign
+in to publish and manage their own listings; admins verify organizers and
+moderate events.
 
-This project was built with [Lovable](https://lovable.dev).
+## Stack
 
-**Live app**: https://screen-snapshot-magic-18.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/ceb35302-1bb4-489e-bfd4-d27d51f3142f).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+- **Frontend**: TanStack Start (React 19) + TanStack Router/Query, Leaflet /
+  react-leaflet for the map, Tailwind CSS + shadcn/ui components.
+- **Backend**: Flask, Firestore (via `firebase-admin`) for data, Cloudinary for
+  image hosting, JWT-based auth.
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+### Frontend
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install
 npm run dev
+```
+
+### Backend
+
+```sh
+cd backend
+python -m venv .venv
+.venv/Scripts/activate   # .venv/bin/activate on macOS/Linux
+pip install -r requirements.txt
+python run.py
+```
+
+Copy `backend/.env.example` to `backend/.env` and fill in:
+
+- `JWT_SECRET` — any random string for local dev.
+- `FIREBASE_ADMIN_CREDENTIALS_PATH` — path to a Firebase service account JSON.
+- `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` —
+  from your Cloudinary dashboard. Image uploads fail without these; everything
+  else (auth, events, moderation, analytics) works regardless.
+- `CORS_ORIGINS` — must include whatever origin the Vite dev server picks
+  (it varies by run — check the terminal output).
+
+Seed demo data (optional, for local testing) with:
+
+```sh
+python -m scripts.seed_demo_data
+```
+
+Create an admin login separately with:
+
+```sh
+python -m scripts.create_admin
 ```

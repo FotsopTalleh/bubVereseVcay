@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bar,
   BarChart,
@@ -19,64 +20,59 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useStore } from "@/lib/store";
-import { ORGANIZER_STATUSES } from "@/lib/types";
+import { api } from "@/lib/api";
+import { ORGANIZER_STATUSES, type OrganizerStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminAnalytics,
 });
 
-function AdminAnalytics() {
-  const events = useStore((s) => s.events);
-  const organizers = useStore((s) => s.organizers);
+type Analytics = {
+  organizerCount: number;
+  organizersByStatus: Record<OrganizerStatus, number>;
+  publishedEvents: number;
+  totalEvents: number;
+  totals: { pinClicks: number; directionClicks: number };
+  trend: { date: string; pinClicks: number; directionClicks: number }[];
+  perOrganizer: {
+    id: string;
+    name: string;
+    status: OrganizerStatus;
+    events: number;
+    published: number;
+    pin: number;
+    dir: number;
+  }[];
+};
 
-  const totals = events.reduce(
-    (acc, e) => ({ pin: acc.pin + e.pinClicks, dir: acc.dir + e.directionClicks }),
-    { pin: 0, dir: 0 },
-  );
+function AdminAnalytics() {
+  const { data } = useQuery({
+    queryKey: ["admin-analytics"],
+    queryFn: () => api.get<Analytics>("/admin/analytics"),
+  });
+
+  if (!data) return null;
 
   const statusData = ORGANIZER_STATUSES.map((status) => ({
     status: status.replace(" Verification", ""),
-    count: organizers.filter((o) => o.status === status).length,
+    count: data.organizersByStatus[status] ?? 0,
   }));
-
-  const byDate = new Map<string, { date: string; pinClicks: number; directionClicks: number }>();
-  events.forEach((e) =>
-    e.history.forEach((h) => {
-      const row = byDate.get(h.date) ?? { date: h.date, pinClicks: 0, directionClicks: 0 };
-      row.pinClicks += h.pinClicks;
-      row.directionClicks += h.directionClicks;
-      byDate.set(h.date, row);
-    }),
-  );
-  const trend = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
-
-  const perOrganizer = organizers
-    .map((o) => {
-      const owned = events.filter((e) => e.organizerId === o.id);
-      return {
-        id: o.id,
-        name: o.name,
-        status: o.status,
-        events: owned.length,
-        published: owned.filter((e) => e.status === "Published").length,
-        pin: owned.reduce((sum, e) => sum + e.pinClicks, 0),
-        dir: owned.reduce((sum, e) => sum + e.directionClicks, 0),
-      };
-    })
-    .sort((a, b) => b.pin - a.pin);
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-4">
-        <StatCard label="Organizers" value={organizers.length} hint="Registered planners" />
+        <StatCard label="Organizers" value={data.organizerCount} hint="Registered planners" />
         <StatCard
           label="Published events"
-          value={events.filter((e) => e.status === "Published").length}
-          hint={`${events.length} total records`}
+          value={data.publishedEvents}
+          hint={`${data.totalEvents} total records`}
         />
-        <StatCard label="Pin clicks" value={totals.pin} hint="Platform-wide" />
-        <StatCard label="Direction clicks" value={totals.dir} hint="Platform-wide" />
+        <StatCard label="Pin clicks" value={data.totals.pinClicks} hint="Platform-wide" />
+        <StatCard
+          label="Direction clicks"
+          value={data.totals.directionClicks}
+          hint="Platform-wide"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -102,7 +98,12 @@ function AdminAnalytics() {
                     fontSize: 12,
                   }}
                 />
-                <Bar dataKey="count" name="Organizers" fill="var(--chart-3)" radius={[6, 6, 0, 0]} />
+                <Bar
+                  dataKey="count"
+                  name="Organizers"
+                  fill="var(--chart-3)"
+                  radius={[6, 6, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -112,7 +113,7 @@ function AdminAnalytics() {
           <h2 className="text-sm font-semibold">Platform interest over time</h2>
           <div className="mt-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trend}>
+              <LineChart data={data.trend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" />
                 <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" width={30} />
@@ -160,7 +161,7 @@ function AdminAnalytics() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {perOrganizer.map((row) => (
+            {data.perOrganizer.map((row) => (
               <TableRow key={row.id}>
                 <TableCell className="font-medium">{row.name}</TableCell>
                 <TableCell className="text-muted-foreground">{row.status}</TableCell>

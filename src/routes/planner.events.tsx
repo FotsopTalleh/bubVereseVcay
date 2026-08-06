@@ -1,21 +1,32 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MousePointerClick, Navigation, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { deleteEvent, useStore } from "@/lib/store";
+import { api, ApiError } from "@/lib/api";
 import { formatEventDate } from "@/lib/directions";
+import type { EventRecord } from "@/lib/types";
 
 export const Route = createFileRoute("/planner/events")({
   component: PlannerEvents,
 });
 
 function PlannerEvents() {
-  const events = useStore((s) => {
-    const current = s.session;
-    return current?.role === "planner"
-      ? s.events.filter((e) => e.organizerId === current.organizerId)
-      : [];
+  const queryClient = useQueryClient();
+  const { data: events = [] } = useQuery({
+    queryKey: ["planner-events"],
+    queryFn: () => api.get<EventRecord[]>("/planner/events"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${id}`),
+    onSuccess: () => {
+      toast.success("Event deleted");
+      void queryClient.invalidateQueries({ queryKey: ["planner-events"] });
+    },
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Could not delete event."),
   });
 
   if (events.length === 0) {
@@ -37,7 +48,7 @@ function PlannerEvents() {
           className="flex flex-wrap items-center gap-4 rounded-2xl border bg-card p-4"
         >
           <img
-            src={event.image}
+            src={event.flyerImageUrl}
             alt=""
             loading="lazy"
             className="h-20 w-16 rounded-lg object-cover"
@@ -74,14 +85,7 @@ function PlannerEvents() {
                 Edit
               </Link>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                deleteEvent(event.id);
-                toast.success("Event deleted");
-              }}
-            >
+            <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(event.id)}>
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               Delete
             </Button>

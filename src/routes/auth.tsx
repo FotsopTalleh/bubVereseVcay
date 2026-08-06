@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PoweredBy, Wordmark } from "@/components/brand";
-import { hydrateStore, loginAdmin, loginPlanner, registerPlanner } from "@/lib/store";
-import { CHANNEL_TYPES, type ChannelType } from "@/lib/types";
+import { api, ApiError } from "@/lib/api";
+import { setSession } from "@/lib/session";
+import { CHANNEL_TYPES, type ChannelType, type Organizer, type AdminAccount } from "@/lib/types";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -39,9 +40,12 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof ApiError ? err.message : fallback;
+}
+
 function AuthPage() {
   const router = useRouter();
-  useEffect(() => hydrateStore(), []);
 
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-4 py-10">
@@ -61,16 +65,24 @@ function AuthPage() {
 
         <TabsContent value="signin">
           <SignInForm
-            onSubmit={(email, password) => {
-              const result = loginPlanner(email, password);
-              if (!result.ok) {
-                toast.error(result.error);
-                return;
+            onSubmit={async (email, password) => {
+              try {
+                const result = await api.post<{ organizer: Organizer; token: string }>(
+                  "/auth/login",
+                  { email, password },
+                );
+                setSession({
+                  role: "planner",
+                  organizerId: result.organizer.id,
+                  token: result.token,
+                });
+                toast.success(`Welcome back, ${result.organizer.name}`);
+                void router.navigate({ to: "/planner" });
+              } catch (err) {
+                toast.error(errorMessage(err, "Sign in failed."));
               }
-              toast.success(`Welcome back, ${result.organizer.name}`);
-              void router.navigate({ to: "/planner" });
             }}
-            hint="Demo planner: planner@bubverse.app / planner123"
+            hint="Sign in with the planner account you registered."
           />
         </TabsContent>
 
@@ -80,16 +92,20 @@ function AuthPage() {
 
         <TabsContent value="admin">
           <SignInForm
-            onSubmit={(email, password) => {
-              const result = loginAdmin(email, password);
-              if (!result.ok) {
-                toast.error(result.error);
-                return;
+            onSubmit={async (email, password) => {
+              try {
+                const result = await api.post<{ admin: AdminAccount; token: string }>(
+                  "/auth/admin/login",
+                  { email, password },
+                );
+                setSession({ role: "admin", token: result.token });
+                toast.success("Signed in as administrator");
+                void router.navigate({ to: "/admin" });
+              } catch (err) {
+                toast.error(errorMessage(err, "Sign in failed."));
               }
-              toast.success("Signed in as administrator");
-              void router.navigate({ to: "/admin" });
             }}
-            hint="Demo admin: admin@bubverse.app / admin123"
+            hint="Admin accounts are created with the backend's create_admin script."
           />
         </TabsContent>
       </Tabs>
@@ -108,18 +124,20 @@ function SignInForm({
   onSubmit,
   hint,
 }: {
-  onSubmit: (email: string, password: string) => void;
+  onSubmit: (email: string, password: string) => void | Promise<void>;
   hint: string;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <form
       className="mt-4 space-y-4 rounded-2xl border bg-card p-5"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit(email, password);
+        setSubmitting(true);
+        void Promise.resolve(onSubmit(email, password)).finally(() => setSubmitting(false));
       }}
     >
       <div className="space-y-2">
@@ -142,8 +160,8 @@ function SignInForm({
           required
         />
       </div>
-      <Button type="submit" className="w-full">
-        Sign in
+      <Button type="submit" className="w-full" disabled={submitting}>
+        {submitting ? "Signing in…" : "Sign in"}
       </Button>
       <p className="text-center text-xs text-muted-foreground">{hint}</p>
     </form>
@@ -158,6 +176,7 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
   const [channelType, setChannelType] = useState<ChannelType>("WhatsApp");
   const [channelValue, setChannelValue] = useState("");
   const [showPublicly, setShowPublicly] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <form
@@ -168,20 +187,29 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
           toast.error("At least one contact channel is required for verification.");
           return;
         }
-        const result = registerPlanner({
-          name,
-          email,
-          password,
-          bio,
-          channels: [{ type: channelType, value: channelValue.trim() }],
-          showContactsPublicly: showPublicly,
-        });
-        if (!result.ok) {
-          toast.error(result.error);
-          return;
-        }
-        toast.success("Account created. Status: Pending Verification.");
-        onDone();
+        setSubmitting(true);
+        void (async () => {
+          try {
+            const result = await api.post<{ organizer: Organizer; token: string }>(
+              "/auth/register",
+              {
+                name,
+                email,
+                password,
+                bio,
+                channels: [{ type: channelType, value: channelValue.trim() }],
+                showContactsPublicly: showPublicly,
+              },
+            );
+            setSession({ role: "planner", organizerId: result.organizer.id, token: result.token });
+            toast.success("Account created. Status: Pending Verification.");
+            onDone();
+          } catch (err) {
+            toast.error(errorMessage(err, "Registration failed."));
+          } finally {
+            setSubmitting(false);
+          }
+        })();
       }}
     >
       <div className="space-y-2">
@@ -250,8 +278,8 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      <Button type="submit" className="w-full">
-        Create planner account
+      <Button type="submit" className="w-full" disabled={submitting}>
+        {submitting ? "Creating account…" : "Create planner account"}
       </Button>
     </form>
   );

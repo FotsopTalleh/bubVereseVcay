@@ -1,9 +1,38 @@
-import { recordDirectionClick } from "./store";
-import type { EventRecord } from "./types";
+import { api, ApiError } from "./api";
+
+const CLIENT_DEBOUNCE_MS = 4000;
+const lastTap = new Map<string, number>();
+
+/** Client-side debounce against rapid double-taps, layered on top of the
+ * server's own debounce + rate limit — this just avoids firing redundant
+ * requests, it isn't the source of truth for "counted once". */
+function isDebounced(key: string): boolean {
+  const now = Date.now();
+  const last = lastTap.get(key);
+  if (last !== undefined && now - last < CLIENT_DEBOUNCE_MS) return true;
+  lastTap.set(key, now);
+  return false;
+}
+
+async function recordInteraction(eventId: string, path: "pin-click" | "direction-click") {
+  if (isDebounced(`${path}:${eventId}`)) return;
+  try {
+    await api.post(`/events/${eventId}/${path}`);
+  } catch (err) {
+    // Best-effort signal — never block the user's flow on this failing.
+    if (!(err instanceof ApiError)) console.error(err);
+  }
+}
+
+export const recordPinClick = (eventId: string) => recordInteraction(eventId, "pin-click");
+export const recordDirectionClick = (eventId: string) =>
+  recordInteraction(eventId, "direction-click");
+
+type DirectionsTarget = { id: string; lat: number; lng: number };
 
 /** Hands off to Google Maps for routing (deep link on mobile, web fallback). */
-export function openDirections(event: EventRecord) {
-  recordDirectionClick(event.id);
+export function openDirections(event: DirectionsTarget) {
+  void recordDirectionClick(event.id);
   const { lat, lng } = event;
   const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
   if (typeof window === "undefined") return;

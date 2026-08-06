@@ -1,7 +1,9 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-@import "maplibre-gl/dist/maplibre-gl.css";
+@import "leaflet/dist/leaflet.css";
+@import "leaflet.markercluster/dist/MarkerCluster.css";
+@import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -212,6 +214,68 @@
   padding: 0 6px;
 }
 
-.maplibregl-ctrl-attrib {
+.leaflet-control-attribution {
   font-size: 10px;
+}
+
+.bv-cluster-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+
+.bv-user-dot-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+
+.bv-user-dot {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  margin: 2px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px oklch(0 0 0 / 0.15);
+}
+
+.bv-user-dot-pulse {
+  position: absolute;
+  inset: -8px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  opacity: 0.4;
+  animation: bv-user-dot-pulse 1.8s ease-out infinite;
+}
+
+@keyframes bv-user-dot-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+/** Active-tab indicator on the planner's mobile bottom nav — same pulse as
+ * the live-location dot, just smaller. */
+.bv-nav-dot {
+  position: relative;
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+.bv-nav-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  opacity: 0.4;
+  animation: bv-user-dot-pulse 1.8s ease-out infinite;
 }

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,20 +22,60 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { deleteEvent, moderateEvent, useStore } from "@/lib/store";
+import { api, ApiError } from "@/lib/api";
 import { formatEventDate } from "@/lib/directions";
-import type { EventStatus } from "@/lib/types";
+import type { EventRecord, EventStatus, ModerationLog, Organizer } from "@/lib/types";
 
 export const Route = createFileRoute("/admin/events")({
   component: AdminEvents,
 });
 
 function AdminEvents() {
-  const events = useStore((s) => s.events);
-  const organizers = useStore((s) => s.organizers);
-  const logs = useStore((s) => s.logs);
+  const queryClient = useQueryClient();
+  const { data: events = [] } = useQuery({
+    queryKey: ["admin-events"],
+    queryFn: () => api.get<EventRecord[]>("/admin/events"),
+  });
+  const { data: organizers = [] } = useQuery({
+    queryKey: ["admin-organizers"],
+    queryFn: () => api.get<Organizer[]>("/admin/organizers"),
+  });
+  const { data: logs = [] } = useQuery({
+    queryKey: ["admin-moderation-logs"],
+    queryFn: () => api.get<ModerationLog[]>("/admin/moderation-logs"),
+  });
+
   const [pending, setPending] = useState<{ id: string; status: EventStatus } | null>(null);
   const [reason, setReason] = useState("");
+
+  const invalidateAll = () => {
+    void queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-moderation-logs"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-analytics"] });
+  };
+
+  const moderateMutation = useMutation({
+    mutationFn: ({ id, status, reason: r }: { id: string; status: EventStatus; reason: string }) =>
+      api.patch(`/admin/events/${id}/moderate`, { status, reason: r }),
+    onSuccess: (_data, variables) => {
+      toast.success(`Event set to ${variables.status}`);
+      invalidateAll();
+      setPending(null);
+      setReason("");
+    },
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Could not update event."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${id}`),
+    onSuccess: () => {
+      toast.success("Event deleted");
+      invalidateAll();
+    },
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Could not delete event."),
+  });
 
   return (
     <div className="space-y-6">
@@ -76,9 +117,7 @@ function AdminEvents() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{event.pinClicks}</TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {event.directionClicks}
-                </TableCell>
+                <TableCell className="text-right tabular-nums">{event.directionClicks}</TableCell>
                 <TableCell className="space-x-2 text-right">
                   {event.status !== "Unpublished" && (
                     <Button
@@ -107,14 +146,7 @@ function AdminEvents() {
                       Remove
                     </Button>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      deleteEvent(event.id);
-                      toast.success("Event deleted");
-                    }}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(event.id)}>
                     Delete
                   </Button>
                 </TableCell>
@@ -176,10 +208,11 @@ function AdminEvents() {
                   toast.error("A reason is required.");
                   return;
                 }
-                moderateEvent(pending.id, pending.status, reason.trim());
-                toast.success(`Event set to ${pending.status}`);
-                setPending(null);
-                setReason("");
+                moderateMutation.mutate({
+                  id: pending.id,
+                  status: pending.status,
+                  reason: reason.trim(),
+                });
               }}
             >
               Confirm
