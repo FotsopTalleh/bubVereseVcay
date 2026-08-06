@@ -21,11 +21,12 @@ export const Route = createFileRoute("/planner/")({
 
 function PlannerOverview() {
   const session = useStore((s) => s.session);
-  const events = useStore((s) =>
-    s.session?.role === "planner"
-      ? s.events.filter((e) => e.organizerId === s.session!.organizerId)
-      : [],
-  );
+  const events = useStore((s) => {
+    const current = s.session;
+    return current?.role === "planner"
+      ? s.events.filter((e) => e.organizerId === current.organizerId)
+      : [];
+  });
 
   const totals = events.reduce(
     (acc, e) => ({
