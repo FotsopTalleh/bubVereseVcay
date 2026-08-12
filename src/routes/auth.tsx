@@ -73,85 +73,65 @@ function AuthPage() {
   };
 
   return (
-    <main className="grid min-h-[100dvh] lg:grid-cols-2">
-      <section className="hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
-        <Wordmark className="text-xl [&_span:first-child]:text-primary-foreground" />
-        <div className="max-w-sm space-y-4">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Put your events on the map, literally.
-          </h1>
-          <p className="text-sm text-primary-foreground/80">
-            Publish flyer-image pins that people can find, filter and get directions to — no app
-            download, no account needed on their end.
-          </p>
-        </div>
-        <p className="text-xs text-primary-foreground/60">
-          Trusted by organizers across the Southwest and Littoral regions.
-        </p>
-      </section>
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-4 py-10">
+      <div className="text-center">
+        <Wordmark className="text-2xl" />
+        <p className="tracking-arch mt-2 text-[10px] text-muted-foreground">Event planner access</p>
+      </div>
 
-      <section className="flex flex-col items-center justify-center gap-6 px-4 py-10">
-        <div className="text-center lg:hidden">
-          <Wordmark className="text-2xl" />
-          <p className="tracking-arch mt-2 text-[10px] text-muted-foreground">
-            Event planner access
-          </p>
-        </div>
+      <div className="w-full max-w-md space-y-4">
+        {GOOGLE_SIGN_IN_ENABLED && (
+          <>
+            <GoogleSignInButton onCredential={(t) => void handleGoogleCredential(t)} />
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or continue with email
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          </>
+        )}
 
-        <div className="w-full max-w-md space-y-4">
-          {GOOGLE_SIGN_IN_ENABLED && (
-            <>
-              <GoogleSignInButton onCredential={(t) => void handleGoogleCredential(t)} />
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border" />
-                or continue with email
-                <span className="h-px flex-1 bg-border" />
-              </div>
-            </>
-          )}
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="signin">Sign in</TabsTrigger>
+            <TabsTrigger value="register">Register</TabsTrigger>
+          </TabsList>
 
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign in</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
-            </TabsList>
+          <TabsContent value="signin">
+            <SignInForm
+              onSubmit={async (email, password) => {
+                try {
+                  const result = await api.post<{ organizer: Organizer; token: string }>(
+                    "/auth/login",
+                    { email, password },
+                  );
+                  setSession({
+                    role: "planner",
+                    organizerId: result.organizer.id,
+                    organizerName: result.organizer.name,
+                    token: result.token,
+                  });
+                  toast.success(`Welcome back, ${result.organizer.name}`);
+                  void router.navigate({ to: "/planner" });
+                } catch (err) {
+                  toast.error(errorMessage(err, "Sign in failed."));
+                }
+              }}
+            />
+          </TabsContent>
 
-            <TabsContent value="signin">
-              <SignInForm
-                onSubmit={async (email, password) => {
-                  try {
-                    const result = await api.post<{ organizer: Organizer; token: string }>(
-                      "/auth/login",
-                      { email, password },
-                    );
-                    setSession({
-                      role: "planner",
-                      organizerId: result.organizer.id,
-                      organizerName: result.organizer.name,
-                      token: result.token,
-                    });
-                    toast.success(`Welcome back, ${result.organizer.name}`);
-                    void router.navigate({ to: "/planner" });
-                  } catch (err) {
-                    toast.error(errorMessage(err, "Sign in failed."));
-                  }
-                }}
-              />
-            </TabsContent>
+          <TabsContent value="register">
+            <RegisterForm onDone={() => router.navigate({ to: "/planner" })} />
+          </TabsContent>
+        </Tabs>
+      </div>
 
-            <TabsContent value="register">
-              <RegisterForm onDone={() => router.navigate({ to: "/planner" })} />
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
-            Back to the public map
-          </Link>
-          <PoweredBy />
-        </div>
-      </section>
+      <div className="flex flex-col items-center gap-2">
+        <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
+          Back to the public map
+        </Link>
+        <PoweredBy />
+      </div>
     </main>
   );
 }
