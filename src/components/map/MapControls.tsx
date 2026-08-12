@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import { CircleUserRound, Search, X } from "lucide-react";
 import { InitialsAvatar } from "@/components/Avatar";
@@ -25,6 +26,8 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
   const isPlanner = session?.role === "planner";
   const isLoggedIn = session !== null;
   const [showAccountHint, setShowAccountHint] = useState(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
+  const [hintPos, setHintPos] = useState<{ top: number; right: number } | null>(null);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -45,6 +48,26 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
       window.clearTimeout(hideTimer);
     };
   }, [isLoggedIn]);
+
+  // The hint is portaled to <body> (see below) so it can't get trapped
+  // behind the category chips — their `surface-frost` backdrop-filter blur
+  // forces its own compositing pass that mobile browsers routinely paint
+  // above absolutely-positioned siblings, z-index be damned. Portaling means
+  // its position has to be tracked in viewport coordinates by hand.
+  useEffect(() => {
+    if (!showAccountHint || !avatarRef.current) {
+      setHintPos(null);
+      return;
+    }
+    const update = () => {
+      if (!avatarRef.current) return;
+      const rect = avatarRef.current.getBoundingClientRect();
+      setHintPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [showAccountHint]);
 
   const dismissAccountHint = () => setShowAccountHint(false);
 
@@ -69,7 +92,7 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
-        <div className="relative -mr-1 shrink-0">
+        <div ref={avatarRef} className="-mr-1 shrink-0">
           {isPlanner ? (
             <Link
               to="/planner"
@@ -87,40 +110,6 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
               <CircleUserRound className="h-7 w-7" aria-hidden="true" strokeWidth={1.5} />
             </Link>
           )}
-
-          {showAccountHint && (
-            <div
-              role="status"
-              // Solid (not surface-frost) so it reads as a real notification
-              // rather than blending into the map. `translateZ(0)` forces its
-              // own GPU compositing layer — on mobile WebKit, the category
-              // chips' `overflow-x-auto` row otherwise gets promoted to a
-              // layer of its own and can paint over this despite the lower
-              // z-index, so this pins it definitively on top.
-              className="pointer-events-auto absolute right-0 top-full z-50 mt-2 w-52 rounded-xl bg-primary p-3 text-xs text-primary-foreground shadow-xl shadow-primary/40 ring-1 ring-primary-foreground/15 duration-150 animate-in fade-in slide-in-from-top-2"
-              style={{ transform: "translateZ(0)" }}
-            >
-              <span
-                aria-hidden="true"
-                className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 rounded-[2px] bg-primary"
-              />
-              <button
-                type="button"
-                onClick={dismissAccountHint}
-                aria-label="Dismiss"
-                className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground"
-              >
-                <X className="h-3 w-3" aria-hidden="true" />
-              </button>
-              <p className="pr-4 leading-snug">
-                Don't have an account?{" "}
-                <Link to="/auth" className="font-semibold underline underline-offset-2">
-                  Click here
-                </Link>{" "}
-                to create one.
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
@@ -135,6 +124,38 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
           />
         ))}
       </div>
+
+      {showAccountHint &&
+        hintPos &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="status"
+            className="fixed z-50 w-52 rounded-xl bg-primary p-3 text-xs text-primary-foreground shadow-xl shadow-primary/40 ring-1 ring-primary-foreground/15 duration-150 animate-in fade-in slide-in-from-top-2"
+            style={{ top: hintPos.top, right: hintPos.right }}
+          >
+            <span
+              aria-hidden="true"
+              className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 rounded-[2px] bg-primary"
+            />
+            <button
+              type="button"
+              onClick={dismissAccountHint}
+              aria-label="Dismiss"
+              className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground"
+            >
+              <X className="h-3 w-3" aria-hidden="true" />
+            </button>
+            <p className="pr-4 leading-snug">
+              Don't have an account?{" "}
+              <Link to="/auth" className="font-semibold underline underline-offset-2">
+                Click here
+              </Link>{" "}
+              to create one.
+            </p>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
