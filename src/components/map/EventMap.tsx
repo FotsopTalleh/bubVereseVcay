@@ -11,7 +11,6 @@ import {
 } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import "@/lib/leaflet-icon-fix";
-import { CATEGORY_ACCENT } from "@/lib/types";
 import type { EventPinSummary } from "@/lib/types";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_URL, TILE_ATTRIBUTION } from "./mapConfig";
 
@@ -26,12 +25,12 @@ type Props<T extends EventPinSummary> = {
   onBoundsChange?: (bbox: Bbox) => void;
   route?: [number, number][] | null;
   userLocation?: [number, number] | undefined;
+  routeTargetId?: string | null;
 };
 
-function buildPinIcon(event: EventPinSummary, active: boolean) {
-  const accent = CATEGORY_ACCENT[event.category];
+function buildPinIcon(event: EventPinSummary, active: boolean, routing: boolean) {
   return L.divIcon({
-    html: `<div class="bv-pin" data-active="${active}" style="--pin-accent:${accent}"><img src="${event.flyerImageUrl}" alt="" loading="lazy" /></div>`,
+    html: `<div class="bv-pin" data-active="${active}" data-routing="${routing}"><img src="${event.flyerImageUrl}" alt="" loading="lazy" /></div>`,
     className: "bv-pin-wrap",
     iconSize: [46, 60],
     iconAnchor: [23, 30],
@@ -107,6 +106,7 @@ export function EventMap<T extends EventPinSummary>({
   onBoundsChange,
   route,
   userLocation,
+  routeTargetId,
 }: Props<T>) {
   return (
     <MapContainer
@@ -145,7 +145,7 @@ export function EventMap<T extends EventPinSummary>({
           <Marker
             key={event.id}
             position={[event.lat, event.lng]}
-            icon={buildPinIcon(event, event.id === activeId)}
+            icon={buildPinIcon(event, event.id === activeId, event.id === routeTargetId)}
             eventHandlers={{ click: () => onSelect(event) }}
           />
         ))}

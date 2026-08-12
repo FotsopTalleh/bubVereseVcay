@@ -41,54 +41,68 @@ function PlannerEvents() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="grid gap-4 sm:grid-cols-2">
       {events.map((event) => (
         <article
           key={event.id}
-          className="flex flex-wrap items-center gap-4 rounded-2xl border bg-card p-4"
+          className="flex flex-col overflow-hidden rounded-2xl border bg-card"
         >
-          <img
-            src={event.flyerImageUrl}
-            alt=""
-            loading="lazy"
-            className="h-20 w-16 rounded-lg object-cover"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-medium">{event.title}</h2>
-              <Badge variant={event.status === "Published" ? "default" : "secondary"}>
+          <div className="relative">
+            <img
+              src={event.flyerImageUrl}
+              alt=""
+              loading="lazy"
+              className="h-40 w-full object-cover"
+            />
+          </div>
+
+          <div className="flex flex-1 flex-col gap-3 p-4">
+            <div>
+              <Badge
+                variant={event.status === "Published" ? "default" : "secondary"}
+                className="mb-2"
+              >
                 {event.status}
               </Badge>
+              <h2 className="truncate font-medium">{event.title}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {formatEventDate(event.date)} · {event.venueName}
+              </p>
+              <p className="text-xs text-muted-foreground">{event.category}</p>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {formatEventDate(event.date)} · {event.venueName} · {event.category}
-            </p>
-          </div>
-          <dl className="flex gap-5 text-sm">
-            <div>
-              <dt className="flex items-center gap-1 text-[10px] tracking-arch text-muted-foreground">
-                <MousePointerClick className="h-3 w-3" aria-hidden="true" /> Pin
-              </dt>
-              <dd className="font-semibold tabular-nums">{event.pinClicks}</dd>
+
+            <dl className="flex gap-5 text-sm">
+              <div>
+                <dt className="flex items-center gap-1 text-[10px] tracking-arch text-muted-foreground">
+                  <MousePointerClick className="h-3 w-3" aria-hidden="true" /> Pin
+                </dt>
+                <dd className="font-semibold tabular-nums">{event.pinClicks}</dd>
+              </div>
+              <div>
+                <dt className="flex items-center gap-1 text-[10px] tracking-arch text-muted-foreground">
+                  <Navigation className="h-3 w-3" aria-hidden="true" /> Directions
+                </dt>
+                <dd className="font-semibold tabular-nums">{event.directionClicks}</dd>
+              </div>
+            </dl>
+
+            <div className="mt-auto flex gap-2 pt-1">
+              <Button asChild variant="outline" size="sm" className="flex-1">
+                <Link to="/planner/edit/$eventId" params={{ eventId: event.id }}>
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1"
+                onClick={() => deleteMutation.mutate(event.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Delete
+              </Button>
             </div>
-            <div>
-              <dt className="flex items-center gap-1 text-[10px] tracking-arch text-muted-foreground">
-                <Navigation className="h-3 w-3" aria-hidden="true" /> Directions
-              </dt>
-              <dd className="font-semibold tabular-nums">{event.directionClicks}</dd>
-            </div>
-          </dl>
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/planner/edit/$eventId" params={{ eventId: event.id }}>
-                <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                Edit
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(event.id)}>
-              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-              Delete
-            </Button>
           </div>
         </article>
       ))}

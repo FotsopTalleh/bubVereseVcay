@@ -8,7 +8,7 @@ import { InitialsAvatar } from "@/components/Avatar";
 type NavItem = { to: string; label: string; icon: typeof LayoutGrid; exact?: boolean };
 
 const NAV_MAP: NavItem = { to: "/", label: "Map", icon: MapIcon, exact: true };
-const NAV_LEFT: NavItem = { to: "/planner", label: "Overview", icon: LayoutGrid, exact: true };
+const NAV_LEFT: NavItem = { to: "/planner", label: "Dashboard", icon: LayoutGrid, exact: true };
 const NAV_RIGHT: NavItem = { to: "/planner/events", label: "My events", icon: CalendarDays };
 const NEW_EVENT_PATH = "/planner/new-event";
 
@@ -26,7 +26,9 @@ function NavLink({ item }: { item: NavItem }) {
       <Icon className="h-5 w-5" aria-hidden="true" />
       <span className="flex items-center gap-1.5">
         {item.label}
-        {active && <span className="bv-nav-dot" aria-hidden="true" />}
+        {active && (
+          <span className="bv-nav-dot duration-200 animate-in zoom-in fade-in" aria-hidden="true" />
+        )}
       </span>
     </Link>
   );
@@ -39,10 +41,15 @@ function NewEventButton() {
     <Link
       to={NEW_EVENT_PATH}
       aria-label="New event"
-      className="relative -mt-7 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-transform hover:scale-105"
+      className="flex flex-col items-center gap-1 px-3 py-1 text-xs"
     >
-      <Plus className="h-6 w-6" aria-hidden="true" />
-      {active && <span className="bv-nav-dot absolute right-1 top-1" aria-hidden="true" />}
+      <span className="relative -mt-8 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-transform hover:scale-105 active:scale-95">
+        <span className="bv-fab-pulse" aria-hidden="true" />
+        <Plus className="h-6 w-6" aria-hidden="true" />
+      </span>
+      <span className={active ? "font-medium text-primary" : "text-muted-foreground"}>
+        New event
+      </span>
     </Link>
   );
 }

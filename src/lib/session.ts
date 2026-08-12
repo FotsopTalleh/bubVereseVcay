@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from "react";
 
 export type Session =
-  { role: "planner"; organizerId: string; token: string } | { role: "admin"; token: string } | null;
+  | { role: "planner"; organizerId: string; organizerName: string; token: string }
+  | { role: "admin"; token: string }
+  | null;
 
 const STORAGE_KEY = "bubversevacy.session";
 

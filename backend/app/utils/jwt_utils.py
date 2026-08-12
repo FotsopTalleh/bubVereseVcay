@@ -33,3 +33,23 @@ def verify_token(token: str) -> dict:
         return jwt.decode(token, _secret(), algorithms=[ALGORITHM])
     except jwt.PyJWTError as exc:
         raise TokenError(str(exc)) from exc
+
+
+def issue_password_reset_ticket(organizer_id: str) -> str:
+    """Short-lived, single-purpose token proving a reset code was verified —
+    distinct from a login token via the `purpose` claim."""
+    now = datetime.now(timezone.utc)
+    claims = {
+        "sub": organizer_id,
+        "purpose": "password_reset",
+        "iat": now,
+        "exp": now + timedelta(minutes=10),
+    }
+    return jwt.encode(claims, _secret(), algorithm=ALGORITHM)
+
+
+def verify_password_reset_ticket(token: str) -> dict:
+    claims = verify_token(token)
+    if claims.get("purpose") != "password_reset":
+        raise TokenError("Not a password-reset ticket")
+    return claims

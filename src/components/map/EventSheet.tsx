@@ -1,6 +1,9 @@
+import { useState } from "react";
 import {
   CalendarDays,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Clock,
   MapPin,
@@ -46,6 +49,78 @@ function RatingStars({ rating }: { rating: number }) {
   );
 }
 
+function Lightbox({
+  images,
+  index,
+  title,
+  onIndexChange,
+  onClose,
+}: {
+  images: string[];
+  index: number;
+  title: string;
+  onIndexChange: (index: number) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 duration-150 animate-in fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${title} photo ${index + 1} of ${images.length}`}
+      onClick={onClose}
+    >
+      {/* Deliberately top-LEFT, not top-right — a top-right close button
+          sits at the same screen position as the account icon underneath
+          once this overlay unmounts, and a mobile "ghost click" (the tap
+          that closes this also registers on whatever's now there) would
+          send the user straight to the sign-in page. */}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute left-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+      >
+        <X className="h-5 w-5" aria-hidden="true" />
+      </button>
+
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onIndexChange((index - 1 + images.length) % images.length);
+            }}
+            aria-label="Previous photo"
+            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 sm:left-4"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onIndexChange((index + 1) % images.length);
+            }}
+            aria-label="Next photo"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 sm:right-4"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </>
+      )}
+
+      <img
+        src={images[index]}
+        alt={`${title} photo ${index + 1} of ${images.length}`}
+        className="max-h-full max-w-full rounded-lg object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+}
+
 export function EventSheet({
   event,
   detail,
@@ -61,6 +136,7 @@ export function EventSheet({
   const verified = organizer?.status === "Verified";
   const gallery =
     detail?.images && detail.images.length > 0 ? detail.images : [event.flyerImageUrl];
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center p-3">
@@ -112,13 +188,20 @@ export function EventSheet({
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto border-t px-3 py-4">
             <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {gallery.map((src, i) => (
-                <img
+                <button
                   key={src + i}
-                  src={src}
-                  alt={`${event.title} photo ${i + 1} of ${gallery.length}`}
-                  loading="lazy"
-                  className="h-56 w-[85%] shrink-0 snap-center rounded-xl object-cover"
-                />
+                  type="button"
+                  onClick={() => setLightboxIndex(i)}
+                  aria-label={`View photo ${i + 1} of ${gallery.length} full size`}
+                  className="shrink-0 snap-center"
+                >
+                  <img
+                    src={src}
+                    alt={`${event.title} photo ${i + 1} of ${gallery.length}`}
+                    loading="lazy"
+                    className="h-72 w-full rounded-xl object-cover sm:w-[26rem]"
+                  />
+                </button>
               ))}
             </div>
 
@@ -189,6 +272,16 @@ export function EventSheet({
           </Button>
         </div>
       </div>
+
+      {lightboxIndex !== null && (
+        <Lightbox
+          images={gallery}
+          index={lightboxIndex}
+          title={event.title}
+          onIndexChange={setLightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </div>
   );
 }

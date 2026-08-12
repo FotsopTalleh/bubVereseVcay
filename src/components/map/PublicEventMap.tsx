@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { ClientOnly, Link } from "@tanstack/react-router";
+import { ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { LogIn } from "lucide-react";
 import type { Bbox } from "@/components/map/EventMap";
 import { MapControls } from "@/components/map/MapControls";
 import { EventSheet } from "@/components/map/EventSheet";
@@ -161,6 +160,7 @@ export function PublicEventMap() {
             onBoundsChange={setBounds}
             route={route?.points ?? null}
             userLocation={liveLocation ?? center}
+            routeTargetId={routeTarget?.id ?? null}
           />
         </Suspense>
       </ClientOnly>
@@ -183,14 +183,6 @@ export function PublicEventMap() {
           <PoweredBy />
         </div>
       </div>
-
-      <Link
-        to="/auth"
-        className="surface-frost absolute right-3 top-3 z-20 hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-accent sm:inline-flex"
-      >
-        <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
-        Planner sign in
-      </Link>
 
       {activeEvent && (
         <EventSheet

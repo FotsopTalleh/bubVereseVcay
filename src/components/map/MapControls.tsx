@@ -1,4 +1,8 @@
-import { Search, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { CircleUserRound, Search, X } from "lucide-react";
+import { InitialsAvatar } from "@/components/Avatar";
+import { useSession } from "@/hooks/useSession";
 import { CATEGORIES, type Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +14,40 @@ type Props = {
   onClear: () => void;
 };
 
+// Recurring pointer for signed-out visitors: pops up, holds long enough to
+// read, then hides — and repeats for as long as no one's signed in. Not a
+// one-time dismiss, so nothing is persisted to localStorage.
+const HINT_INTERVAL_MS = 20_000;
+const HINT_VISIBLE_MS = 5_000;
+
 export function MapControls({ query, onQuery, selected, onToggle, onClear }: Props) {
+  const { session } = useSession();
+  const isPlanner = session?.role === "planner";
+  const isLoggedIn = session !== null;
+  const [showAccountHint, setShowAccountHint] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      setShowAccountHint(false);
+      return;
+    }
+
+    let hideTimer: number;
+    const show = () => {
+      setShowAccountHint(true);
+      hideTimer = window.setTimeout(() => setShowAccountHint(false), HINT_VISIBLE_MS);
+    };
+
+    show();
+    const interval = window.setInterval(show, HINT_INTERVAL_MS);
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(hideTimer);
+    };
+  }, [isLoggedIn]);
+
+  const dismissAccountHint = () => setShowAccountHint(false);
+
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 space-y-2 p-3">
       <div className="pointer-events-auto surface-frost flex items-center gap-2 rounded-full px-3 py-2 shadow-sm">
@@ -32,6 +69,57 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
+        <div className="relative -mr-1 shrink-0">
+          {isPlanner ? (
+            <Link
+              to="/planner"
+              aria-label="Go to your planner dashboard"
+              className="block rounded-full transition-opacity hover:opacity-80"
+            >
+              <InitialsAvatar name={session.organizerName} className="h-7 w-7 text-[11px]" />
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              aria-label="Planner sign in"
+              className="block rounded-full text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <CircleUserRound className="h-7 w-7" aria-hidden="true" strokeWidth={1.5} />
+            </Link>
+          )}
+
+          {showAccountHint && (
+            <div
+              role="status"
+              className="surface-frost pointer-events-auto absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border p-3 text-xs shadow-lg duration-150 animate-in fade-in slide-in-from-top-2"
+            >
+              <span
+                aria-hidden="true"
+                className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 border-l border-t"
+                style={{
+                  backgroundColor: "color-mix(in oklab, var(--color-background) 88%, transparent)",
+                  borderColor: "color-mix(in oklab, var(--color-border) 80%, transparent)",
+                  backdropFilter: "blur(10px)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={dismissAccountHint}
+                aria-label="Dismiss"
+                className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+              <p className="pr-4 leading-snug">
+                Don't have an account?{" "}
+                <Link to="/auth" className="font-medium text-primary hover:underline">
+                  Click here
+                </Link>{" "}
+                to create one.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="pointer-events-auto -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -49,15 +137,7 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
   );
 }
 
-function Chip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
