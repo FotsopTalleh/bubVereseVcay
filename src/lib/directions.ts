@@ -14,7 +14,10 @@ function isDebounced(key: string): boolean {
   return false;
 }
 
-async function recordInteraction(eventId: string, path: "pin-click" | "direction-click") {
+async function recordInteraction(
+  eventId: string,
+  path: "pin-click" | "direction-click" | "share" | "link-click",
+) {
   if (isDebounced(`${path}:${eventId}`)) return;
   try {
     await api.post(`/events/${eventId}/${path}`);
@@ -27,6 +30,10 @@ async function recordInteraction(eventId: string, path: "pin-click" | "direction
 export const recordPinClick = (eventId: string) => recordInteraction(eventId, "pin-click");
 export const recordDirectionClick = (eventId: string) =>
   recordInteraction(eventId, "direction-click");
+/** Fired once per tap of the share button — reach, not opens. */
+export const recordShare = (eventId: string) => recordInteraction(eventId, "share");
+/** Fired once when a shared link is opened — conversion, not reach. */
+export const recordLinkClick = (eventId: string) => recordInteraction(eventId, "link-click");
 
 type DirectionsTarget = { id: string; lat: number; lng: number };
 

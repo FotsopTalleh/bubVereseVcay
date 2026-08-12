@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShareButton } from "@/components/ShareButton";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { formatEventDate, formatTimeRange } from "@/lib/directions";
 import { cn } from "@/lib/utils";
@@ -265,11 +266,12 @@ export function EventSheet({
           </div>
         )}
 
-        <div className="shrink-0 border-t p-3">
-          <Button className="w-full" onClick={onDirections} disabled={directionsLoading}>
+        <div className="flex shrink-0 gap-2 border-t p-3">
+          <Button className="flex-1" onClick={onDirections} disabled={directionsLoading}>
             <Navigation className="h-4 w-4" aria-hidden="true" />
             {directionsLoading ? "Calculating route…" : "Get Directions"}
           </Button>
+          <ShareButton event={event} />
         </div>
       </div>
 

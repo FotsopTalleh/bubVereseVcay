@@ -90,11 +90,21 @@ export type EventRecord = {
   organizerId: string;
   pinClicks: number;
   directionClicks: number;
+  /** Number of times the share button generated a link — reach, not opens. */
+  shareCount: number;
+  /** Number of times a shared link was opened — conversion, not reach. */
+  linkClicks: number;
   status: EventStatus;
   createdAt: string;
   updatedAt: string;
   /** Daily interest history for planner/admin trend charts. */
-  history: { date: string; pinClicks: number; directionClicks: number }[];
+  history: {
+    date: string;
+    pinClicks: number;
+    directionClicks: number;
+    shareCount: number;
+    linkClicks: number;
+  }[];
 };
 
 export type ModerationLog = {

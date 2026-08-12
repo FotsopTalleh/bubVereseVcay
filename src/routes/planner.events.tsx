@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MousePointerClick, Navigation, Pencil, Trash2 } from "lucide-react";
+import { Link2, MousePointerClick, Navigation, Pencil, Share2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api, ApiError } from "@/lib/api";
@@ -71,7 +71,7 @@ function PlannerEvents() {
               <p className="text-xs text-muted-foreground">{event.category}</p>
             </div>
 
-            <dl className="flex gap-5 text-sm">
+            <dl className="grid grid-cols-2 gap-x-5 gap-y-2 text-sm">
               <div>
                 <dt className="flex items-center gap-1 text-[10px] tracking-arch text-muted-foreground">
                   <MousePointerClick className="h-3 w-3" aria-hidden="true" /> Pin
@@ -83,6 +83,18 @@ function PlannerEvents() {
                   <Navigation className="h-3 w-3" aria-hidden="true" /> Directions
                 </dt>
                 <dd className="font-semibold tabular-nums">{event.directionClicks}</dd>
+              </div>
+              <div>
+                <dt className="flex items-center gap-1 text-[10px] tracking-arch text-muted-foreground">
+                  <Share2 className="h-3 w-3" aria-hidden="true" /> Shares
+                </dt>
+                <dd className="font-semibold tabular-nums">{event.shareCount}</dd>
+              </div>
+              <div>
+                <dt className="flex items-center gap-1 text-[10px] tracking-arch text-muted-foreground">
+                  <Link2 className="h-3 w-3" aria-hidden="true" /> Link clicks
+                </dt>
+                <dd className="font-semibold tabular-nums">{event.linkClicks}</dd>
               </div>
             </dl>
 

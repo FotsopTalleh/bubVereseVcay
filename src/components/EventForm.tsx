@@ -25,7 +25,14 @@ const MAX_IMAGES = 5;
 
 export type EventDraft = Omit<
   EventRecord,
-  "id" | "pinClicks" | "directionClicks" | "createdAt" | "updatedAt" | "history"
+  | "id"
+  | "pinClicks"
+  | "directionClicks"
+  | "shareCount"
+  | "linkClicks"
+  | "createdAt"
+  | "updatedAt"
+  | "history"
 >;
 
 type UploadSignature = {

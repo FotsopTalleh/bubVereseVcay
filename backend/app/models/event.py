@@ -35,6 +35,8 @@ def to_dict(doc_id: str, data: dict) -> dict:
         "organizerId": data.get("organizerId"),
         "pinClicks": data.get("pinClicks", 0),
         "directionClicks": data.get("directionClicks", 0),
+        "shareCount": data.get("shareCount", 0),
+        "linkClicks": data.get("linkClicks", 0),
         "status": data.get("status", "Published"),
         "createdAt": data.get("createdAt"),
         "updatedAt": data.get("updatedAt"),

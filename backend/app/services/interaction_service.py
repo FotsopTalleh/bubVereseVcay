@@ -7,6 +7,7 @@ from app.utils.firestore_client import get_db
 
 DEBOUNCE_SECONDS = 4
 COLLECTION = "events"
+TRACKED_FIELDS = ("pinClicks", "directionClicks", "shareCount", "linkClicks")
 
 # In-process debounce store. Fine for a single-instance V1 deployment; move to
 # Firestore/Redis if the API ever runs as more than one worker process.
@@ -36,14 +37,14 @@ def _bump_history(history: list, field: str) -> list:
             found = True
         updated.append(entry)
     if not found:
-        base = {"date": today, "pinClicks": 0, "directionClicks": 0}
+        base = {"date": today, **{f: 0 for f in TRACKED_FIELDS}}
         base[field] = 1
         updated.append(base)
     return updated
 
 
 def record_interaction(event_id: str, field: str, visitor_id: str) -> dict:
-    if field not in ("pinClicks", "directionClicks"):
+    if field not in TRACKED_FIELDS:
         raise ApiError("Invalid interaction field.")
 
     doc_ref = get_db().collection(COLLECTION).document(event_id)

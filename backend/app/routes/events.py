@@ -83,3 +83,19 @@ def pin_click(event_id: str):
 @limiter.limit("20 per minute")
 def direction_click(event_id: str):
     return jsonify(interaction_service.record_interaction(event_id, "directionClicks", _visitor_id()))
+
+
+@events_bp.post("/<event_id>/share")
+@limiter.limit("20 per minute")
+def share(event_id: str):
+    """Counted once per tap of the share button — i.e. how many times a
+    shareable link was generated, not how many people it reached."""
+    return jsonify(interaction_service.record_interaction(event_id, "shareCount", _visitor_id()))
+
+
+@events_bp.post("/<event_id>/link-click")
+@limiter.limit("20 per minute")
+def link_click(event_id: str):
+    """Counted once per person who opens a shared link — separate from
+    shareCount so planners can see reach (shares) vs conversion (opens)."""
+    return jsonify(interaction_service.record_interaction(event_id, "linkClicks", _visitor_id()))

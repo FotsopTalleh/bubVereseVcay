@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PublicEventMap } from "@/components/map/PublicEventMap";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): { event?: string } =>
+    typeof search["event"] === "string" ? { event: search["event"] } : {},
   head: () => ({
     meta: [
       { title: "BubVerseVacy — Discover Events Near You on the Map" },

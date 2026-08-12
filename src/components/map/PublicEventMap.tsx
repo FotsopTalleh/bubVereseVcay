@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { ClientOnly } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { ClientOnly, useNavigate, useSearch } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Bbox } from "@/components/map/EventMap";
 import { MapControls } from "@/components/map/MapControls";
 import { EventSheet } from "@/components/map/EventSheet";
@@ -8,7 +8,12 @@ import { RoutePanel } from "@/components/map/RoutePanel";
 import { LocationPermissionDialog } from "@/components/map/LocationPermissionDialog";
 import { PoweredBy, Wordmark } from "@/components/brand";
 import { api } from "@/lib/api";
-import { openDirections, recordDirectionClick, recordPinClick } from "@/lib/directions";
+import {
+  openDirections,
+  recordDirectionClick,
+  recordLinkClick,
+  recordPinClick,
+} from "@/lib/directions";
 import { fetchRoute, type RouteResult } from "@/lib/routing";
 import type { Category, EventPinSummary, PublicEventDetail } from "@/lib/types";
 
@@ -34,6 +39,11 @@ function requestLocation(): Promise<[number, number] | null> {
 }
 
 export function PublicEventMap() {
+  const search = useSearch({ from: "/" });
+  const navigate = useNavigate({ from: "/" });
+  const queryClient = useQueryClient();
+  const handledShareLinkRef = useRef(false);
+  const [deepLinkedEvent, setDeepLinkedEvent] = useState<EventPinSummary | null>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
@@ -124,6 +134,43 @@ export function PublicEventMap() {
     setShowLocationPrompt(false);
   };
 
+  // A shared link (see ShareButton/lib/share.ts) lands here as ?event=<id> —
+  // jump straight to that event's expanded card, the same place "See more"
+  // takes you, and count it as a link open. The fetched detail already has
+  // everything an EventPinSummary needs, so it's also used as a fallback
+  // source for `activeEvent` below in case this event isn't in the current
+  // bounds-scoped list yet (recentering the map to it fixes that shortly
+  // after, but the card shouldn't have to wait on that round trip).
+  useEffect(() => {
+    const sharedId = search.event;
+    if (!sharedId || handledShareLinkRef.current) return;
+    handledShareLinkRef.current = true;
+
+    void (async () => {
+      try {
+        const detail = await api.get<PublicEventDetail>(`/events/${sharedId}`);
+        setDeepLinkedEvent(detail);
+        setCenter([detail.lat, detail.lng]);
+        hasRecenteredRef.current = true;
+        setActiveId(detail.id);
+        setExpanded(true);
+        queryClient.setQueryData(["public-event-detail", detail.id], detail);
+        void recordLinkClick(detail.id);
+      } catch {
+        /* Bad or removed event id in the link — fall back to the default map silently. */
+      } finally {
+        void navigate({
+          search: (prev) => {
+            const { event: _sharedEvent, ...rest } = prev;
+            return rest;
+          },
+          replace: true,
+        });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const categoriesKey = selectedCategories.join(",");
 
   const { data: events = [] } = useQuery({
@@ -138,7 +185,9 @@ export function PublicEventMap() {
     placeholderData: (previous) => previous,
   });
 
-  const activeEvent = events.find((e) => e.id === activeId) ?? null;
+  const activeEvent =
+    events.find((e) => e.id === activeId) ??
+    (deepLinkedEvent?.id === activeId ? deepLinkedEvent : null);
 
   const detailQuery = useQuery({
     queryKey: ["public-event-detail", activeId],
