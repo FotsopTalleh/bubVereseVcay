@@ -29,8 +29,17 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
   const avatarRef = useRef<HTMLDivElement>(null);
   const [hintPos, setHintPos] = useState<{ top: number; right: number } | null>(null);
 
+  // Signed-out visitors get pointed at sign-up; signed-in planners get
+  // pointed at their dashboard instead. Admin sessions (not expected on this
+  // page, but session state allows it) get neither.
+  const hintVariant: "signup" | "dashboard" | null = !isLoggedIn
+    ? "signup"
+    : isPlanner
+      ? "dashboard"
+      : null;
+
   useEffect(() => {
-    if (isLoggedIn) {
+    if (!hintVariant) {
       setShowAccountHint(false);
       return;
     }
@@ -47,7 +56,7 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
       window.clearInterval(interval);
       window.clearTimeout(hideTimer);
     };
-  }, [isLoggedIn]);
+  }, [hintVariant]);
 
   // The hint is portaled to <body> (see below) so it can't get trapped
   // behind the category chips — their `surface-frost` backdrop-filter blur
@@ -127,32 +136,53 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
 
       {showAccountHint &&
         hintPos &&
+        hintVariant &&
         typeof document !== "undefined" &&
         createPortal(
           <div
             role="status"
-            className="fixed z-50 w-52 rounded-xl bg-primary p-3 text-xs text-primary-foreground shadow-xl shadow-primary/40 ring-1 ring-primary-foreground/15 duration-150 animate-in fade-in slide-in-from-top-2"
+            className="fixed z-50 w-56 rounded-xl bg-primary p-3 text-xs text-primary-foreground shadow-xl shadow-primary/40 ring-1 ring-primary-foreground/15 duration-150 animate-in fade-in slide-in-from-top-2"
             style={{ top: hintPos.top, right: hintPos.right }}
           >
             <span
               aria-hidden="true"
               className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 rounded-[2px] bg-primary"
             />
+            {/* Stretched-link pattern: the whole card is the tap target, not
+             * just the underlined phrase — a `<button>` can't nest inside
+             * this `<a>`, so the dismiss button is a sibling positioned on
+             * top instead, which also sidesteps any click-bubbling concern. */}
+            <Link
+              to={hintVariant === "dashboard" ? "/planner" : "/auth"}
+              aria-label={
+                hintVariant === "dashboard" ? "Go to your planner dashboard" : "Planner sign in"
+              }
+              onClick={dismissAccountHint}
+              className="absolute inset-0 rounded-xl"
+            />
             <button
               type="button"
               onClick={dismissAccountHint}
               aria-label="Dismiss"
-              className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground"
+              className="relative z-10 float-right -m-1 rounded-full p-1 text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground"
             >
               <X className="h-3 w-3" aria-hidden="true" />
             </button>
-            <p className="pr-4 leading-snug">
-              Don't have an account?{" "}
-              <Link to="/auth" className="font-semibold underline underline-offset-2">
-                Click here
-              </Link>{" "}
-              to create one.
-            </p>
+            {hintVariant === "dashboard" ? (
+              <p className="relative pr-4 leading-snug">
+                Ready to manage your events?{" "}
+                <span className="font-semibold underline underline-offset-2">
+                  Head to your dashboard
+                </span>
+                .
+              </p>
+            ) : (
+              <p className="relative pr-4 leading-snug">
+                Don't have an account?{" "}
+                <span className="font-semibold underline underline-offset-2">Click here</span> to
+                create one.
+              </p>
+            )}
           </div>,
           document.body,
         )}

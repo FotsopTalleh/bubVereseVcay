@@ -5,6 +5,7 @@ import type { Bbox } from "@/components/map/EventMap";
 import { MapControls } from "@/components/map/MapControls";
 import { EventSheet } from "@/components/map/EventSheet";
 import { RoutePanel } from "@/components/map/RoutePanel";
+import { LocationPermissionDialog } from "@/components/map/LocationPermissionDialog";
 import { PoweredBy, Wordmark } from "@/components/brand";
 import { api } from "@/lib/api";
 import { openDirections, recordDirectionClick, recordPinClick } from "@/lib/directions";
@@ -46,6 +47,10 @@ export function PublicEventMap() {
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const hasRecenteredRef = useRef(false);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [locationRetrying, setLocationRetrying] = useState(false);
+  const [locationRetryFailed, setLocationRetryFailed] = useState(false);
+  const locationDismissedRef = useRef(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
@@ -56,10 +61,25 @@ export function PublicEventMap() {
   // marker and keeps directions routing from a fresh origin. Only the first
   // fix ever recenters the map; later updates just move the dot, so the map
   // doesn't fight the user's own panning/zooming.
+  //
+  // Some mobile browsers (iOS Safari especially) don't reliably surface the
+  // native permission prompt for a watchPosition call fired on page load —
+  // it just goes nowhere, with no error and no fix. So: if we don't have a
+  // fix within a few seconds, or the watch reports an error, show our own
+  // dialog — its "Allow location" button re-requests from a click handler,
+  // which reliably triggers the native prompt since it's a user gesture.
   useEffect(() => {
     if (!("geolocation" in navigator)) return;
+    let gotFix = false;
+    const graceTimer = window.setTimeout(() => {
+      if (!gotFix && !locationDismissedRef.current) setShowLocationPrompt(true);
+    }, 4000);
+
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
+        gotFix = true;
+        window.clearTimeout(graceTimer);
+        setShowLocationPrompt(false);
         const point: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setLiveLocation(point);
         if (!hasRecenteredRef.current) {
@@ -68,12 +88,41 @@ export function PublicEventMap() {
         }
       },
       () => {
-        /* keep the default city center */
+        window.clearTimeout(graceTimer);
+        if (!locationDismissedRef.current) setShowLocationPrompt(true);
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 },
     );
-    return () => navigator.geolocation.clearWatch(watchId);
+    return () => {
+      window.clearTimeout(graceTimer);
+      navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
+
+  const retryLocationPermission = () => {
+    setLocationRetrying(true);
+    setLocationRetryFailed(false);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocationRetrying(false);
+        setShowLocationPrompt(false);
+        const point: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setLiveLocation(point);
+        hasRecenteredRef.current = true;
+        setCenter(point);
+      },
+      () => {
+        setLocationRetrying(false);
+        setLocationRetryFailed(true);
+      },
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  };
+
+  const dismissLocationPrompt = () => {
+    locationDismissedRef.current = true;
+    setShowLocationPrompt(false);
+  };
 
   const categoriesKey = selectedCategories.join(",");
 
@@ -218,6 +267,14 @@ export function PublicEventMap() {
           No events match the current filters.
         </div>
       )}
+
+      <LocationPermissionDialog
+        open={showLocationPrompt}
+        retrying={locationRetrying}
+        retryFailed={locationRetryFailed}
+        onRetry={retryLocationPermission}
+        onDismiss={dismissLocationPrompt}
+      />
     </main>
   );
 }
