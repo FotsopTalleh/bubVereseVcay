@@ -91,28 +91,30 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
           {showAccountHint && (
             <div
               role="status"
-              className="surface-frost pointer-events-auto absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border p-3 text-xs shadow-lg duration-150 animate-in fade-in slide-in-from-top-2"
+              // Solid (not surface-frost) so it reads as a real notification
+              // rather than blending into the map. `translateZ(0)` forces its
+              // own GPU compositing layer — on mobile WebKit, the category
+              // chips' `overflow-x-auto` row otherwise gets promoted to a
+              // layer of its own and can paint over this despite the lower
+              // z-index, so this pins it definitively on top.
+              className="pointer-events-auto absolute right-0 top-full z-50 mt-2 w-52 rounded-xl bg-primary p-3 text-xs text-primary-foreground shadow-xl shadow-primary/40 ring-1 ring-primary-foreground/15 duration-150 animate-in fade-in slide-in-from-top-2"
+              style={{ transform: "translateZ(0)" }}
             >
               <span
                 aria-hidden="true"
-                className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 border-l border-t"
-                style={{
-                  backgroundColor: "color-mix(in oklab, var(--color-background) 88%, transparent)",
-                  borderColor: "color-mix(in oklab, var(--color-border) 80%, transparent)",
-                  backdropFilter: "blur(10px)",
-                }}
+                className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 rounded-[2px] bg-primary"
               />
               <button
                 type="button"
                 onClick={dismissAccountHint}
                 aria-label="Dismiss"
-                className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground"
               >
                 <X className="h-3 w-3" aria-hidden="true" />
               </button>
               <p className="pr-4 leading-snug">
                 Don't have an account?{" "}
-                <Link to="/auth" className="font-medium text-primary hover:underline">
+                <Link to="/auth" className="font-semibold underline underline-offset-2">
                   Click here
                 </Link>{" "}
                 to create one.
