@@ -90,6 +90,8 @@ function AdminEvents() {
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Pin</TableHead>
               <TableHead className="text-right">Directions</TableHead>
+              <TableHead className="text-right">Shares</TableHead>
+              <TableHead className="text-right">Link clicks</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -118,6 +120,8 @@ function AdminEvents() {
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{event.pinClicks}</TableCell>
                 <TableCell className="text-right tabular-nums">{event.directionClicks}</TableCell>
+                <TableCell className="text-right tabular-nums">{event.shareCount}</TableCell>
+                <TableCell className="text-right tabular-nums">{event.linkClicks}</TableCell>
                 <TableCell className="space-x-2 text-right">
                   {event.status !== "Unpublished" && (
                     <Button

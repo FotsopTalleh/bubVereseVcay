@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { MousePointerClick, Navigation, CalendarCheck } from "lucide-react";
+import { MousePointerClick, Navigation, CalendarCheck, Share2, Link2 } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { api } from "@/lib/api";
 import type { EventRecord } from "@/lib/types";
@@ -31,17 +31,36 @@ function PlannerOverview() {
     (acc, e) => ({
       pin: acc.pin + e.pinClicks,
       dir: acc.dir + e.directionClicks,
+      share: acc.share + e.shareCount,
+      link: acc.link + e.linkClicks,
     }),
-    { pin: 0, dir: 0 },
+    { pin: 0, dir: 0, share: 0, link: 0 },
   );
 
   const trend = useMemo(() => {
-    const byDate = new Map<string, { date: string; pinClicks: number; directionClicks: number }>();
+    const byDate = new Map<
+      string,
+      {
+        date: string;
+        pinClicks: number;
+        directionClicks: number;
+        shareCount: number;
+        linkClicks: number;
+      }
+    >();
     events.forEach((e) =>
       e.history.forEach((h) => {
-        const row = byDate.get(h.date) ?? { date: h.date, pinClicks: 0, directionClicks: 0 };
+        const row = byDate.get(h.date) ?? {
+          date: h.date,
+          pinClicks: 0,
+          directionClicks: 0,
+          shareCount: 0,
+          linkClicks: 0,
+        };
         row.pinClicks += h.pinClicks;
         row.directionClicks += h.directionClicks;
+        row.shareCount += h.shareCount;
+        row.linkClicks += h.linkClicks;
         byDate.set(h.date, row);
       }),
     );
@@ -52,11 +71,13 @@ function PlannerOverview() {
     name: e.title.length > 16 ? `${e.title.slice(0, 15)}…` : e.title,
     pinClicks: e.pinClicks,
     directionClicks: e.directionClicks,
+    shareCount: e.shareCount,
+    linkClicks: e.linkClicks,
   }));
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard
           label="Pin clicks"
           value={totals.pin}
@@ -68,6 +89,18 @@ function PlannerOverview() {
           value={totals.dir}
           hint="Strong intent signals"
           icon={<Navigation className="h-4 w-4" aria-hidden="true" />}
+        />
+        <StatCard
+          label="Shares"
+          value={totals.share}
+          hint="Reach — link generated"
+          icon={<Share2 className="h-4 w-4" aria-hidden="true" />}
+        />
+        <StatCard
+          label="Link clicks"
+          value={totals.link}
+          hint="Conversion — link opened"
+          icon={<Link2 className="h-4 w-4" aria-hidden="true" />}
         />
         <StatCard
           label="Published events"
@@ -109,6 +142,22 @@ function PlannerOverview() {
                 strokeWidth={2}
                 dot={false}
               />
+              <Line
+                type="monotone"
+                dataKey="shareCount"
+                name="Shares"
+                stroke="var(--chart-2)"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="linkClicks"
+                name="Link clicks"
+                stroke="var(--chart-4)"
+                strokeWidth={2}
+                dot={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -141,6 +190,13 @@ function PlannerOverview() {
                 dataKey="directionClicks"
                 name="Direction clicks"
                 fill="var(--chart-2)"
+                radius={[6, 6, 0, 0]}
+              />
+              <Bar dataKey="shareCount" name="Shares" fill="var(--chart-3)" radius={[6, 6, 0, 0]} />
+              <Bar
+                dataKey="linkClicks"
+                name="Link clicks"
+                fill="var(--chart-4)"
                 radius={[6, 6, 0, 0]}
               />
             </BarChart>

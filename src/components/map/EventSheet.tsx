@@ -271,7 +271,7 @@ export function EventSheet({
             <Navigation className="h-4 w-4" aria-hidden="true" />
             {directionsLoading ? "Calculating route…" : "Get Directions"}
           </Button>
-          <ShareButton event={event} />
+          <ShareButton event={event} variant="full" className="flex-1" />
         </div>
       </div>
 

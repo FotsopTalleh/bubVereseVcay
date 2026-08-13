@@ -63,6 +63,8 @@ def create_event(organizer_id: str, payload: dict) -> dict:
         "organizerId": organizer_id,
         "pinClicks": 0,
         "directionClicks": 0,
+        "shareCount": 0,
+        "linkClicks": 0,
         "status": status,
         "createdAt": now,
         "updatedAt": now,

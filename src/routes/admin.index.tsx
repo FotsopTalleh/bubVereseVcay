@@ -32,8 +32,14 @@ type Analytics = {
   organizersByStatus: Record<OrganizerStatus, number>;
   publishedEvents: number;
   totalEvents: number;
-  totals: { pinClicks: number; directionClicks: number };
-  trend: { date: string; pinClicks: number; directionClicks: number }[];
+  totals: { pinClicks: number; directionClicks: number; shareCount: number; linkClicks: number };
+  trend: {
+    date: string;
+    pinClicks: number;
+    directionClicks: number;
+    shareCount: number;
+    linkClicks: number;
+  }[];
   perOrganizer: {
     id: string;
     name: string;
@@ -42,6 +48,8 @@ type Analytics = {
     published: number;
     pin: number;
     dir: number;
+    share: number;
+    link: number;
   }[];
 };
 
@@ -60,7 +68,7 @@ function AdminAnalytics() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Organizers" value={data.organizerCount} hint="Registered planners" />
         <StatCard
           label="Published events"
@@ -73,6 +81,8 @@ function AdminAnalytics() {
           value={data.totals.directionClicks}
           hint="Platform-wide"
         />
+        <StatCard label="Shares" value={data.totals.shareCount} hint="Platform-wide" />
+        <StatCard label="Link clicks" value={data.totals.linkClicks} hint="Platform-wide" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -141,6 +151,22 @@ function AdminAnalytics() {
                   strokeWidth={2}
                   dot={false}
                 />
+                <Line
+                  type="monotone"
+                  dataKey="shareCount"
+                  name="Shares"
+                  stroke="var(--chart-3)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="linkClicks"
+                  name="Link clicks"
+                  stroke="var(--chart-4)"
+                  strokeWidth={2}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -158,6 +184,8 @@ function AdminAnalytics() {
               <TableHead className="text-right">Published</TableHead>
               <TableHead className="text-right">Pin clicks</TableHead>
               <TableHead className="text-right">Direction clicks</TableHead>
+              <TableHead className="text-right">Shares</TableHead>
+              <TableHead className="text-right">Link clicks</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -169,6 +197,8 @@ function AdminAnalytics() {
                 <TableCell className="text-right tabular-nums">{row.published}</TableCell>
                 <TableCell className="text-right tabular-nums">{row.pin}</TableCell>
                 <TableCell className="text-right tabular-nums">{row.dir}</TableCell>
+                <TableCell className="text-right tabular-nums">{row.share}</TableCell>
+                <TableCell className="text-right tabular-nums">{row.link}</TableCell>
               </TableRow>
             ))}
           </TableBody>

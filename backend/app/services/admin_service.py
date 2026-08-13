@@ -59,15 +59,22 @@ def analytics() -> dict:
     organizers = list_organizers()
     events = list_all_events()
 
-    totals = {"pin": 0, "dir": 0}
+    totals = {"pin": 0, "dir": 0, "share": 0, "link": 0}
     by_date: dict = {}
     for event in events:
         totals["pin"] += event.get("pinClicks", 0)
         totals["dir"] += event.get("directionClicks", 0)
+        totals["share"] += event.get("shareCount", 0)
+        totals["link"] += event.get("linkClicks", 0)
         for h in event.get("history", []):
-            row = by_date.setdefault(h["date"], {"date": h["date"], "pinClicks": 0, "directionClicks": 0})
+            row = by_date.setdefault(
+                h["date"],
+                {"date": h["date"], "pinClicks": 0, "directionClicks": 0, "shareCount": 0, "linkClicks": 0},
+            )
             row["pinClicks"] += h.get("pinClicks", 0)
             row["directionClicks"] += h.get("directionClicks", 0)
+            row["shareCount"] += h.get("shareCount", 0)
+            row["linkClicks"] += h.get("linkClicks", 0)
     trend = sorted(by_date.values(), key=lambda r: r["date"])
 
     per_organizer = []
@@ -82,6 +89,8 @@ def analytics() -> dict:
                 "published": len([e for e in owned if e["status"] == "Published"]),
                 "pin": sum(e.get("pinClicks", 0) for e in owned),
                 "dir": sum(e.get("directionClicks", 0) for e in owned),
+                "share": sum(e.get("shareCount", 0) for e in owned),
+                "link": sum(e.get("linkClicks", 0) for e in owned),
             }
         )
     per_organizer.sort(key=lambda r: r["pin"], reverse=True)
@@ -93,7 +102,12 @@ def analytics() -> dict:
         },
         "publishedEvents": len([e for e in events if e["status"] == "Published"]),
         "totalEvents": len(events),
-        "totals": {"pinClicks": totals["pin"], "directionClicks": totals["dir"]},
+        "totals": {
+            "pinClicks": totals["pin"],
+            "directionClicks": totals["dir"],
+            "shareCount": totals["share"],
+            "linkClicks": totals["link"],
+        },
         "trend": trend,
         "perOrganizer": per_organizer,
     }
