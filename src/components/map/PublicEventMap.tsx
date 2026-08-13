@@ -66,6 +66,8 @@ export function PublicEventMap() {
   const [locationRetrying, setLocationRetrying] = useState(false);
   const [locationRetryFailed, setLocationRetryFailed] = useState(false);
   const locationDismissedRef = useRef(false);
+  const [showToggleHint, setShowToggleHint] = useState(false);
+  const hasToggledViewRef = useRef(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
@@ -138,6 +140,33 @@ export function PublicEventMap() {
     locationDismissedRef.current = true;
     setShowLocationPrompt(false);
   };
+
+  // Recurring pointer at the map/list toggle button, same "show, hold, hide,
+  // repeat" shape as MapControls' account hint — but on a 10s phase offset
+  // (account hint: 0-5s, 20-25s, ...; this one: 10-15s, 30-35s, ...) so the
+  // two never show at once and crowd the screen. Stops for good once the
+  // user has actually used the toggle — no point still teaching it then.
+  const TOGGLE_HINT_INTERVAL_MS = 20_000;
+  const TOGGLE_HINT_VISIBLE_MS = 5_000;
+  const TOGGLE_HINT_PHASE_OFFSET_MS = 10_000;
+  useEffect(() => {
+    let hideTimer: number;
+    let interval: number;
+    const show = () => {
+      if (hasToggledViewRef.current) return;
+      setShowToggleHint(true);
+      hideTimer = window.setTimeout(() => setShowToggleHint(false), TOGGLE_HINT_VISIBLE_MS);
+    };
+    const startTimer = window.setTimeout(() => {
+      show();
+      interval = window.setInterval(show, TOGGLE_HINT_INTERVAL_MS);
+    }, TOGGLE_HINT_PHASE_OFFSET_MS);
+    return () => {
+      window.clearTimeout(startTimer);
+      window.clearTimeout(hideTimer);
+      window.clearInterval(interval);
+    };
+  }, []);
 
   // A shared link (see ShareButton/lib/share.ts) lands here as ?event=<id> —
   // jump straight to that event's expanded card, the same place "See more"
@@ -353,18 +382,33 @@ export function PublicEventMap() {
         onClear={() => setSelectedCategories([])}
       />
 
-      <button
-        type="button"
-        onClick={() => setViewMode((mode) => (mode === "map" ? "list" : "map"))}
-        aria-label={viewMode === "map" ? "Switch to list view" : "Switch to map view"}
-        className="surface-frost pointer-events-auto absolute left-3 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full p-3 shadow-sm"
-      >
-        {viewMode === "map" ? (
-          <ListIcon className="h-5 w-5" aria-hidden="true" />
-        ) : (
-          <MapIcon className="h-5 w-5" aria-hidden="true" />
+      <div className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            hasToggledViewRef.current = true;
+            setShowToggleHint(false);
+            setViewMode((mode) => (mode === "map" ? "list" : "map"));
+          }}
+          aria-label={viewMode === "map" ? "Switch to list view" : "Switch to map view"}
+          className="surface-frost pointer-events-auto flex items-center justify-center rounded-full p-3 shadow-sm"
+        >
+          {viewMode === "map" ? (
+            <ListIcon className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <MapIcon className="h-5 w-5" aria-hidden="true" />
+          )}
+        </button>
+
+        {showToggleHint && (
+          <div
+            role="status"
+            className="pointer-events-none rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/40 duration-150 animate-in fade-in slide-in-from-left-2"
+          >
+            {viewMode === "map" ? "Switch to list" : "Switch to map"}
+          </div>
         )}
-      </button>
+      </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-between p-3" />
 

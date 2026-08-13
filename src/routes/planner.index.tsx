@@ -57,10 +57,13 @@ function PlannerOverview() {
           shareCount: 0,
           linkClicks: 0,
         };
-        row.pinClicks += h.pinClicks;
-        row.directionClicks += h.directionClicks;
-        row.shareCount += h.shareCount;
-        row.linkClicks += h.linkClicks;
+        // History rows written before shareCount/linkClicks existed don't
+        // have those keys at all — fall back to 0 so one old row doesn't
+        // NaN-poison the running total for its date (and everything after).
+        row.pinClicks += h.pinClicks ?? 0;
+        row.directionClicks += h.directionClicks ?? 0;
+        row.shareCount += h.shareCount ?? 0;
+        row.linkClicks += h.linkClicks ?? 0;
         byDate.set(h.date, row);
       }),
     );
@@ -93,13 +96,13 @@ function PlannerOverview() {
         <StatCard
           label="Shares"
           value={totals.share}
-          hint="Reach — link generated"
+          hint="Times your share link was generated"
           icon={<Share2 className="h-4 w-4" aria-hidden="true" />}
         />
         <StatCard
           label="Link clicks"
           value={totals.link}
-          hint="Conversion — link opened"
+          hint="Times a shared link was opened"
           icon={<Link2 className="h-4 w-4" aria-hidden="true" />}
         />
         <StatCard
