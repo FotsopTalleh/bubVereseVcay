@@ -9,5 +9,5 @@ uploads_bp = Blueprint("uploads", __name__)
 @uploads_bp.post("/sign")
 @role_required("planner")
 def sign():
-    """Signed Cloudinary upload params — the API secret stays server-side."""
+    """Signed Cloudinary upload params, the API secret stays server-side."""
     return jsonify(sign_upload())

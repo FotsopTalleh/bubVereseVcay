@@ -15,7 +15,7 @@ def _extract_token() -> str:
 
 def login_required(fn):
     """Verifies the JWT and attaches claims to g.user. Enforced server-side,
-    not just hidden in the UI — every protected route below uses this."""
+    not just hidden in the UI, every protected route below uses this."""
 
     @wraps(fn)
     def wrapper(*args, **kwargs):

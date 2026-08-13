@@ -17,7 +17,7 @@ import { api, ApiError } from "@/lib/api";
 import { TOWNS } from "@/components/map/mapConfig";
 import { CATEGORIES, type Category, type EventRecord, type EventStatus } from "@/lib/types";
 
-// Loaded only in the browser — see LocationPicker.tsx's default export.
+// Loaded only in the browser, see LocationPicker.tsx's default export.
 const LocationPicker = lazy(() => import("@/components/LocationPicker"));
 const PICKER_FALLBACK = <div className="h-72 w-full rounded-xl border bg-muted" />;
 
@@ -329,7 +329,7 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
               required
             />
             <p className="text-xs text-muted-foreground">
-              The name attendees will recognize — shown as the event&apos;s location title.
+              The name attendees will recognize, shown as the event&apos;s location title.
             </p>
           </div>
           <div className="space-y-2">

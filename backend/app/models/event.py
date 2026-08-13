@@ -17,7 +17,7 @@ REQUIRED_FIELDS = (
 
 
 def to_dict(doc_id: str, data: dict) -> dict:
-    """Full shape for planner/admin internal use — includes counters/history."""
+    """Full shape for planner/admin internal use, includes counters/history."""
     return {
         "id": doc_id,
         "title": data.get("title"),
@@ -47,7 +47,7 @@ def to_dict(doc_id: str, data: dict) -> dict:
 def to_summary_dict(doc_id: str, data: dict) -> dict:
     """Lean shape for the public map's pin list. Deliberately excludes
     description/venueName/address (fetched separately on expand) and
-    pinClicks/directionClicks/status/history/timestamps — public clients
+    pinClicks/directionClicks/status/history/timestamps, public clients
     never need those, and not sending them is a stronger guarantee than
     just hiding them in the UI."""
     return {
@@ -67,7 +67,7 @@ def to_summary_dict(doc_id: str, data: dict) -> dict:
 def to_list_dict(doc_id: str, data: dict) -> dict:
     """Shape for the public list view (spec §11 sibling): summary fields plus
     description/venueName/address so each row can render without a per-event
-    detail round trip, but still without images/rating/counters — those stay
+    detail round trip, but still without images/rating/counters, those stay
     behind the single-event detail fetch on "See more"."""
     return {
         **to_summary_dict(doc_id, data),
@@ -78,7 +78,7 @@ def to_list_dict(doc_id: str, data: dict) -> dict:
 
 
 def to_detail_dict(doc_id: str, data: dict) -> dict:
-    """Full public detail — summary fields plus description/venue/address."""
+    """Full public detail, summary fields plus description/venue/address."""
     return {
         **to_summary_dict(doc_id, data),
         "description": data.get("description"),

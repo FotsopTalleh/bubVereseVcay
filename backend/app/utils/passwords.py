@@ -17,7 +17,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def password_strength_errors(password: str) -> list[str]:
-    """Returns a list of unmet requirements — empty list means the password is strong enough."""
+    """Returns a list of unmet requirements, empty list means the password is strong enough."""
     password = password or ""
     missing = []
     if len(password) < MIN_PASSWORD_LENGTH:

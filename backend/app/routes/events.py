@@ -34,7 +34,7 @@ def _visitor_id() -> str:
 
 @events_bp.get("/")
 def list_public():
-    """Public, published-only event pins — scoped to the current map viewport
+    """Public, published-only event pins, scoped to the current map viewport
     via ?bounds=south,west,north,east, optionally filtered by
     ?categories=A,B and ?q=keyword (spec §11: server-side, lean payload)."""
     events = event_service.list_public_summaries(
@@ -44,6 +44,21 @@ def list_public():
         detailed=request.args.get("view") == "list",
     )
     return jsonify(events)
+
+
+@events_bp.get("/nearest")
+def nearest_public():
+    """Closest Published event to ?lat=&lng=, ignoring viewport bounds, the
+    map/list view's "no events here, check elsewhere?" fallback."""
+    try:
+        lat = float(request.args.get("lat", ""))
+        lng = float(request.args.get("lng", ""))
+    except ValueError:
+        return jsonify({"error": "lat and lng query params are required."}), 400
+    nearest = event_service.find_nearest_public(lat, lng)
+    if nearest is None:
+        return jsonify({"error": "No published events found."}), 404
+    return jsonify(nearest)
 
 
 @events_bp.get("/<event_id>")
@@ -91,7 +106,7 @@ def direction_click(event_id: str):
 @events_bp.post("/<event_id>/share")
 @limiter.limit("20 per minute")
 def share(event_id: str):
-    """Counted once per tap of the share button — i.e. how many times a
+    """Counted once per tap of the share button, i.e. how many times a
     shareable link was generated, not how many people it reached."""
     return jsonify(interaction_service.record_interaction(event_id, "shareCount", _visitor_id()))
 
@@ -99,6 +114,6 @@ def share(event_id: str):
 @events_bp.post("/<event_id>/link-click")
 @limiter.limit("20 per minute")
 def link_click(event_id: str):
-    """Counted once per person who opens a shared link — separate from
+    """Counted once per person who opens a shared link, separate from
     shareCount so planners can see reach (shares) vs conversion (opens)."""
     return jsonify(interaction_service.record_interaction(event_id, "linkClicks", _visitor_id()))

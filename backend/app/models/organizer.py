@@ -34,7 +34,7 @@ def to_admin_view(doc_id: str, data: dict) -> dict:
 
 
 def to_public_view(doc_id: str, data: dict) -> dict:
-    """Limited organizer summary attached to a public event response — contact
+    """Limited organizer summary attached to a public event response, contact
     channels are only included if the organizer opted in to showing them."""
     show = data.get("showContactsPublicly", False)
     return {

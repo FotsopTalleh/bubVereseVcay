@@ -6,13 +6,13 @@ export const Route = createFileRoute("/")({
     typeof search["event"] === "string" ? { event: search["event"] } : {},
   head: () => ({
     meta: [
-      { title: "BubVerseVacy — Discover Events Near You on the Map" },
+      { title: "BubVerseVacy, Discover Events Near You on the Map" },
       {
         name: "description",
         content:
           "Browse live events around Buea and Douala as flyer pins on a map. Filter by category, search by name and get directions instantly. No account needed.",
       },
-      { property: "og:title", content: "BubVerseVacy — Event Discovery on the Map" },
+      { property: "og:title", content: "BubVerseVacy, Event Discovery on the Map" },
       {
         property: "og:description",
         content:

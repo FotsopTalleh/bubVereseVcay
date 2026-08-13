@@ -26,7 +26,7 @@ type Props = {
 };
 
 export function ShareButton({ event, variant = "icon", className }: Props) {
-  // Starts false so the server render and the first client render match —
+  // Starts false so the server render and the first client render match ,
   // `navigator` doesn't exist during SSR. Flips true after mount if the
   // browser actually supports the native share sheet, which just triggers a
   // harmless post-hydration re-render rather than a mismatch.

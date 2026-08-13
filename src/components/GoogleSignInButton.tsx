@@ -18,13 +18,13 @@ declare global {
 
 const CLIENT_ID = import.meta.env["VITE_GOOGLE_CLIENT_ID"] as string | undefined;
 
-/** Whether a Google Client ID is actually configured — callers should hide
+/** Whether a Google Client ID is actually configured, callers should hide
  * any "or continue with Google" framing (dividers, etc.) when this is false,
  * rather than showing it above an empty space. */
 export const GOOGLE_SIGN_IN_ENABLED = !!CLIENT_ID;
 
 /** Renders Google's own "Sign in with Google" button and hands the resulting
- * ID token up — the backend verifies it, no client secret involved. Renders
+ * ID token up, the backend verifies it, no client secret involved. Renders
  * nothing if no Client ID is configured, rather than showing a broken button. */
 export function GoogleSignInButton({ onCredential }: { onCredential: (idToken: string) => void }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -37,7 +37,7 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (idToken: s
 
     function render() {
       if (!containerRef.current || !wrapperRef.current || !window.google) return;
-      // Google's button is a fixed-width iframe — size it to the wrapper so
+      // Google's button is a fixed-width iframe, size it to the wrapper so
       // it doesn't overflow the card on narrow phones (Google caps at 400).
       const width = Math.min(
         400,
@@ -72,7 +72,7 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (idToken: s
 
   return (
     <div className="flex justify-center">
-      {/* Gradient ring in the brand colors — Google's iframe controls its own
+      {/* Gradient ring in the brand colors, Google's iframe controls its own
        * corners/fill, so the "pill" shape above plus this wrapper is how we
        * make an otherwise-static Google button feel native to the page. */}
       <div

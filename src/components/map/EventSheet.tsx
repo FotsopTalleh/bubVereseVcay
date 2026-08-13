@@ -71,7 +71,7 @@ function Lightbox({
       aria-label={`${title} photo ${index + 1} of ${images.length}`}
       onClick={onClose}
     >
-      {/* Deliberately top-LEFT, not top-right — a top-right close button
+      {/* Deliberately top-LEFT, not top-right, a top-right close button
           sits at the same screen position as the account icon underneath
           once this overlay unmounts, and a mobile "ghost click" (the tap
           that closes this also registers on whatever's now there) would
@@ -157,7 +157,7 @@ export function EventSheet({
               src={event.flyerImageUrl}
               alt=""
               loading="lazy"
-              className="h-20 w-16 shrink-0 rounded-lg object-cover"
+              className="h-20 w-16 shrink-0 rounded-lg object-cover object-top"
             />
             <div className="min-w-0 flex-1 space-y-1">
               <p className="tracking-arch text-[10px] text-muted-foreground">{event.category}</p>
@@ -200,7 +200,7 @@ export function EventSheet({
                     src={src}
                     alt={`${event.title} photo ${i + 1} of ${gallery.length}`}
                     loading="lazy"
-                    className="h-72 w-full rounded-xl object-cover sm:w-[26rem]"
+                    className="h-72 w-full rounded-xl object-cover object-top sm:w-[26rem]"
                   />
                 </button>
               ))}

@@ -9,10 +9,10 @@ from firebase_admin import credentials, firestore
 @lru_cache(maxsize=1)
 def get_db():
     """Singleton Firestore client. Resolves credentials in order:
-    1. FIREBASE_ADMIN_CREDENTIALS_JSON — the full service-account JSON as a
+    1. FIREBASE_ADMIN_CREDENTIALS_JSON, the full service-account JSON as a
        string env var, for hosts with no GCP metadata server (e.g. Railway).
-    2. FIREBASE_ADMIN_CREDENTIALS_PATH — a local JSON file (local dev).
-    3. Application Default Credentials — an attached GCP service account,
+    2. FIREBASE_ADMIN_CREDENTIALS_PATH, a local JSON file (local dev).
+    3. Application Default Credentials, an attached GCP service account,
        no secret needed at all (e.g. Cloud Run)."""
     if not firebase_admin._apps:
         cred_json = os.environ.get("FIREBASE_ADMIN_CREDENTIALS_JSON")

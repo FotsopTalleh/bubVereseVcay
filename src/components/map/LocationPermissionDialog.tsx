@@ -19,7 +19,7 @@ type Props = {
 
 /** Some mobile browsers (iOS Safari in particular) don't reliably surface
  * the native location permission prompt for a `watchPosition` call fired on
- * page load — the request just silently goes nowhere. Re-requesting from
+ * page load, the request just silently goes nowhere. Re-requesting from
  * inside a click handler (this dialog's "Allow location" button) reliably
  * triggers it, since it's now a direct response to a user gesture. Only
  * shown once we've actually failed to get a fix, never proactively. */

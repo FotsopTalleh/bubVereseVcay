@@ -10,7 +10,7 @@ type Props = {
   onSeeMore: (event: EventListSummary) => void;
 };
 
-/** Public-facing sibling of planner.events.tsx's card grid — same visual
+/** Public-facing sibling of planner.events.tsx's card grid, same visual
  * shape, but no click-count stats (those are planner-only) and the actions
  * are Get Directions / Share rather than Edit / Delete. */
 export function EventListView({ events, onDirections, onSeeMore }: Props) {
@@ -30,7 +30,7 @@ export function EventListView({ events, onDirections, onSeeMore }: Props) {
               src={event.flyerImageUrl}
               alt=""
               loading="lazy"
-              className="h-40 w-full object-cover"
+              className="h-40 w-full object-cover object-top"
             />
           </button>
 

@@ -9,7 +9,7 @@ import { api, ApiError } from "@/lib/api";
 import { setSession } from "@/lib/session";
 import type { AdminAccount } from "@/lib/types";
 
-// Deliberately not linked from any public nav — administrators are given
+// Deliberately not linked from any public nav, administrators are given
 // this URL directly, planners and the public never see it.
 export const Route = createFileRoute("/admin-login")({
   component: AdminLoginPage,

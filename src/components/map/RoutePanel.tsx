@@ -18,7 +18,7 @@ export function RoutePanel({ target, route, loading, error, onExit, onOpenExtern
         <img
           src={target.flyerImageUrl}
           alt=""
-          className="h-9 w-9 shrink-0 rounded-full object-cover"
+          className="h-9 w-9 shrink-0 rounded-full object-cover object-top"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-medium">{target.title}</p>

@@ -5,7 +5,7 @@ export type RouteResult = {
   durationSeconds: number;
 };
 
-// Free, no-API-key public OSRM instance — fine for local/demo routing, not
+// Free, no-API-key public OSRM instance, fine for local/demo routing, not
 // meant for production traffic (no SLA, rate-limited).
 const OSRM_BASE = "https://router.project-osrm.org/route/v1/driving";
 
@@ -26,7 +26,7 @@ export async function fetchRoute(
   };
 }
 
-/** Great-circle distance in meters — used to decide when the live tracker has
+/** Great-circle distance in meters, used to decide when the live tracker has
  * moved far enough to be worth re-routing, not for anything precision-critical. */
 export function haversineMeters(a: [number, number], b: [number, number]): number {
   const EARTH_RADIUS_M = 6_371_000;

@@ -52,7 +52,7 @@ function PlannerEvents() {
               src={event.flyerImageUrl}
               alt=""
               loading="lazy"
-              className="h-40 w-full object-cover"
+              className="h-40 w-full object-cover object-top"
             />
           </div>
 

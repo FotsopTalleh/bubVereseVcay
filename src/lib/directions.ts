@@ -4,7 +4,7 @@ const CLIENT_DEBOUNCE_MS = 4000;
 const lastTap = new Map<string, number>();
 
 /** Client-side debounce against rapid double-taps, layered on top of the
- * server's own debounce + rate limit — this just avoids firing redundant
+ * server's own debounce + rate limit, this just avoids firing redundant
  * requests, it isn't the source of truth for "counted once". */
 function isDebounced(key: string): boolean {
   const now = Date.now();
@@ -22,7 +22,7 @@ async function recordInteraction(
   try {
     await api.post(`/events/${eventId}/${path}`);
   } catch (err) {
-    // Best-effort signal — never block the user's flow on this failing.
+    // Best-effort signal, never block the user's flow on this failing.
     if (!(err instanceof ApiError)) console.error(err);
   }
 }
@@ -30,9 +30,9 @@ async function recordInteraction(
 export const recordPinClick = (eventId: string) => recordInteraction(eventId, "pin-click");
 export const recordDirectionClick = (eventId: string) =>
   recordInteraction(eventId, "direction-click");
-/** Fired once per tap of the share button — reach, not opens. */
+/** Fired once per tap of the share button, reach, not opens. */
 export const recordShare = (eventId: string) => recordInteraction(eventId, "share");
-/** Fired once when a shared link is opened — conversion, not reach. */
+/** Fired once when a shared link is opened, conversion, not reach. */
 export const recordLinkClick = (eventId: string) => recordInteraction(eventId, "link-click");
 
 type DirectionsTarget = { id: string; lat: number; lng: number };

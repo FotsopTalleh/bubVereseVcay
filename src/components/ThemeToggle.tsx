@@ -11,7 +11,7 @@ function getInitialTheme(): Theme {
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  // Starts null so server and first client render match exactly — the real
+  // Starts null so server and first client render match exactly, the real
   // theme (which needs `window`) is only known once this effect runs.
   const [theme, setTheme] = useState<Theme | null>(null);
 

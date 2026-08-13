@@ -134,7 +134,7 @@ def list_public_summaries(
     detailed: bool = False,
 ) -> list:
     """Published-only events, server-side filtered by viewport bounds,
-    category list and title keyword — lean shape for the public map's pin
+    category list and title keyword, lean shape for the public map's pin
     list (§11), each with a limited public organizer summary attached.
     Pass detailed=True (the list view) to also include description/
     venueName/address so each row renders without a per-event fetch."""
@@ -165,8 +165,36 @@ def list_public_summaries(
     return summaries
 
 
+def _haversine_meters(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    from math import asin, cos, radians, sin, sqrt
+
+    earth_radius_m = 6_371_000
+    d_lat = radians(lat2 - lat1)
+    d_lng = radians(lng2 - lng1)
+    h = sin(d_lat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(d_lng / 2) ** 2
+    return 2 * earth_radius_m * asin(sqrt(h))
+
+
+def find_nearest_public(lat: float, lng: float) -> Optional[dict]:
+    """Closest Published event to (lat, lng), ignoring viewport bounds ,
+    used when a bounds-scoped query comes back empty and the map wants to
+    offer "check elsewhere" by jumping straight to the nearest listing."""
+    db = get_db()
+    docs = db.collection(COLLECTION).where("status", "==", "Published").stream()
+    rows = [(d.id, d.to_dict()) for d in docs]
+    if not rows:
+        return None
+
+    doc_id, data = min(
+        rows, key=lambda row: _haversine_meters(lat, lng, row[1].get("lat", 0), row[1].get("lng", 0))
+    )
+    summary = to_summary_dict(doc_id, data)
+    summary["organizer"] = get_public_summary(summary["organizerId"])
+    return summary
+
+
 def get_public_detail(event_id: str) -> dict:
-    """Full public detail for one event — 404s unless Published, so a direct
+    """Full public detail for one event, 404s unless Published, so a direct
     ID lookup can't leak an Unpublished/Removed event's data."""
     doc = _get_doc(event_id)
     data = doc.to_dict()

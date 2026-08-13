@@ -54,7 +54,7 @@ export type Organizer = {
   createdAt: string;
 };
 
-/** Limited organizer shape attached to public event responses — channels are
+/** Limited organizer shape attached to public event responses, channels are
  * only populated server-side when the organizer opted in to showing them. */
 export type PublicOrganizerSummary = {
   id: string;
@@ -90,9 +90,9 @@ export type EventRecord = {
   organizerId: string;
   pinClicks: number;
   directionClicks: number;
-  /** Number of times the share button generated a link — reach, not opens. */
+  /** Number of times the share button generated a link, reach, not opens. */
   shareCount: number;
-  /** Number of times a shared link was opened — conversion, not reach. */
+  /** Number of times a shared link was opened, conversion, not reach. */
   linkClicks: number;
   status: EventStatus;
   createdAt: string;
@@ -117,7 +117,7 @@ export type ModerationLog = {
 };
 
 /**
- * Lean shape for the public map's pin list — deliberately excludes
+ * Lean shape for the public map's pin list, deliberately excludes
  * description/venueName/address (fetched separately on expand) and
  * pinClicks/directionClicks/status/history (never sent to public clients at
  * all, not just hidden in the UI).
@@ -144,7 +144,7 @@ export type PublicEventDetail = EventPinSummary & {
   rating: number | null;
 };
 
-/** Shape returned by GET /events/?view=list — summary fields plus
+/** Shape returned by GET /events/?view=list, summary fields plus
  * description/venueName/address so list-view cards render without a
  * per-event detail fetch. No images/rating; "See more" still fetches
  * PublicEventDetail for those. */

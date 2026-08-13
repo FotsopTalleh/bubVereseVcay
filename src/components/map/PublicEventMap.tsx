@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ClientOnly, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { List as ListIcon, Map as MapIcon } from "lucide-react";
+import { toast } from "sonner";
 import type { Bbox } from "@/components/map/EventMap";
 import { MapControls } from "@/components/map/MapControls";
 import { EventSheet } from "@/components/map/EventSheet";
@@ -21,7 +22,7 @@ import type { Category, EventListSummary, EventPinSummary, PublicEventDetail } f
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-// Loaded only in the browser — Leaflet touches `window` at module-evaluation
+// Loaded only in the browser, Leaflet touches `window` at module-evaluation
 // time and must never enter the SSR bundle. See EventMap.tsx's default export.
 const EventMap = lazy(() => import("@/components/map/EventMap"));
 const MAP_FALLBACK = <div className="absolute inset-0 bg-muted" />;
@@ -68,22 +69,23 @@ export function PublicEventMap() {
   const locationDismissedRef = useRef(false);
   const [showToggleHint, setShowToggleHint] = useState(false);
   const hasToggledViewRef = useRef(false);
+  const [checkingElsewhere, setCheckingElsewhere] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  // Tracks the user's position continuously — feeds the live "you are here"
+  // Tracks the user's position continuously, feeds the live "you are here"
   // marker and keeps directions routing from a fresh origin. Only the first
   // fix ever recenters the map; later updates just move the dot, so the map
   // doesn't fight the user's own panning/zooming.
   //
   // Some mobile browsers (iOS Safari especially) don't reliably surface the
-  // native permission prompt for a watchPosition call fired on page load —
+  // native permission prompt for a watchPosition call fired on page load ,
   // it just goes nowhere, with no error and no fix. So: if we don't have a
   // fix within a few seconds, or the watch reports an error, show our own
-  // dialog — its "Allow location" button re-requests from a click handler,
+  // dialog, its "Allow location" button re-requests from a click handler,
   // which reliably triggers the native prompt since it's a user gesture.
   useEffect(() => {
     if (!("geolocation" in navigator)) return;
@@ -142,10 +144,10 @@ export function PublicEventMap() {
   };
 
   // Recurring pointer at the map/list toggle button, same "show, hold, hide,
-  // repeat" shape as MapControls' account hint — but on a 10s phase offset
+  // repeat" shape as MapControls' account hint, but on a 10s phase offset
   // (account hint: 0-5s, 20-25s, ...; this one: 10-15s, 30-35s, ...) so the
   // two never show at once and crowd the screen. Stops for good once the
-  // user has actually used the toggle — no point still teaching it then.
+  // user has actually used the toggle, no point still teaching it then.
   const TOGGLE_HINT_INTERVAL_MS = 20_000;
   const TOGGLE_HINT_VISIBLE_MS = 5_000;
   const TOGGLE_HINT_PHASE_OFFSET_MS = 10_000;
@@ -168,7 +170,7 @@ export function PublicEventMap() {
     };
   }, []);
 
-  // A shared link (see ShareButton/lib/share.ts) lands here as ?event=<id> —
+  // A shared link (see ShareButton/lib/share.ts) lands here as ?event=<id> ,
   // jump straight to that event's expanded card, the same place "See more"
   // takes you, and count it as a link open. The fetched detail already has
   // everything an EventPinSummary needs, so it's also used as a fallback
@@ -191,7 +193,7 @@ export function PublicEventMap() {
         queryClient.setQueryData(["public-event-detail", detail.id], detail);
         void recordLinkClick(detail.id);
       } catch {
-        /* Bad or removed event id in the link — fall back to the default map silently. */
+        /* Bad or removed event id in the link, fall back to the default map silently. */
       } finally {
         void navigate({
           search: (prev) => {
@@ -220,7 +222,7 @@ export function PublicEventMap() {
   });
 
   // Same bounds/category/query filters as the map's pin query, but with the
-  // description/venueName/address list cards need — the map's pin query
+  // description/venueName/address list cards need, the map's pin query
   // deliberately omits those (see EventPinSummary), so list view keeps the
   // map mounted (for bounds tracking) and just fetches its own shape,
   // only while it's actually the active view.
@@ -253,12 +255,38 @@ export function PublicEventMap() {
   };
 
   // List view's image/See more open straight to the expanded card, the same
-  // place tapping a map pin's own "See more" leads — the list card already
+  // place tapping a map pin's own "See more" leads, the list card already
   // shows what the map's collapsed preview shows, so there's no in-between
   // collapsed state to land on here.
   const handleSeeMoreFromList = (event: EventListSummary) => {
     setActiveId(event.id);
     setExpanded(true);
+  };
+
+  // "There are no events here" fallback: jump the map to whichever
+  // Published event is closest, regardless of the current viewport bounds.
+  // Recentering feeds back through EventMap's Recenter -> moveend -> bounds
+  // update -> both event queries refetch scoped to the new area, so map and
+  // list view both end up showing the nearest event once this resolves.
+  const handleCheckElsewhere = async () => {
+    // Falls back to the current viewport's center when we have no location
+    // fix at all (permission denied), still a reasonable "from here".
+    const reference: [number, number] | undefined =
+      liveLocation ??
+      center ??
+      (bounds ? [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2] : undefined);
+    if (!reference) return;
+    setCheckingElsewhere(true);
+    try {
+      const nearest = await api.get<EventPinSummary>(
+        `/events/nearest?lat=${reference[0]}&lng=${reference[1]}`,
+      );
+      setCenter([nearest.lat, nearest.lng]);
+    } catch {
+      toast.error("No events found on the platform yet.");
+    } finally {
+      setCheckingElsewhere(false);
+    }
   };
 
   const clearRoute = () => {
@@ -273,9 +301,9 @@ export function PublicEventMap() {
   const handleDirections = async (target: EventPinSummary) => {
     void recordDirectionClick(target.id);
     // Directions only ever make sense over the map, so a list-view card's
-    // Get Directions button lands here too — switch back automatically.
+    // Get Directions button lands here too, switch back automatically.
     setViewMode("map");
-    // Dismiss the preview card immediately — the route panel takes over.
+    // Dismiss the preview card immediately, the route panel takes over.
     setActiveId(null);
     setExpanded(false);
     setRoute(null);
@@ -330,7 +358,7 @@ export function PublicEventMap() {
         const updated = await fetchRoute(liveLocation, [routeTarget.lat, routeTarget.lng]);
         setRoute(updated);
       } catch {
-        // Transient refresh failure — keep showing the last good route
+        // Transient refresh failure, keep showing the last good route
         // rather than surfacing an error over a route that still works.
       }
     })();
@@ -360,7 +388,7 @@ export function PublicEventMap() {
       </ClientOnly>
 
       {/* List view sits as an opaque overlay above the (still-mounted) map,
-          rather than unmounting it — Leaflet keeps tracking bounds so the
+          rather than unmounting it, Leaflet keeps tracking bounds so the
           pin query stays warm and toggling back to map view is instant. */}
       {viewMode === "list" && (
         <div className="absolute inset-0 z-[1] overflow-y-auto bg-background pb-20 pt-28">
@@ -451,23 +479,33 @@ export function PublicEventMap() {
       )}
 
       {bounds && (viewMode === "list" ? listEvents.length === 0 : events.length === 0) && (
-        <div className="surface-frost pointer-events-auto absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-xl px-4 py-3 text-center text-sm text-muted-foreground shadow-sm">
+        <button
+          type="button"
+          onClick={
+            selectedCategories.length > 0
+              ? () => setSelectedCategories([])
+              : () => void handleCheckElsewhere()
+          }
+          disabled={selectedCategories.length === 0 && checkingElsewhere}
+          className="surface-frost pointer-events-auto absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-xl px-4 py-3 text-center text-sm shadow-sm disabled:opacity-60"
+        >
           {selectedCategories.length > 0 ? (
             <>
-              No {selectedCategories.join("/")} events here right now — but there are other events
-              in this area you can try.
-              <button
-                type="button"
-                onClick={() => setSelectedCategories([])}
-                className="mt-1 block w-full font-medium text-primary hover:underline"
-              >
-                Clear filter
-              </button>
+              <span className="text-muted-foreground">
+                No {selectedCategories.join("/")} events here right now, but there are other events
+                in this area you can try.
+              </span>
+              <span className="mt-1 block font-medium text-primary">Clear filter</span>
             </>
           ) : (
-            "No events match the current filters."
+            <>
+              <span className="text-muted-foreground">There are no events here.</span>
+              <span className="mt-1 block font-medium text-primary">
+                {checkingElsewhere ? "Looking…" : "Would you like to check elsewhere?"}
+              </span>
+            </>
           )}
-        </div>
+        </button>
       )}
 
       <LocationPermissionDialog

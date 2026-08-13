@@ -32,13 +32,13 @@ import { CHANNEL_TYPES, type ChannelType, type Organizer } from "@/lib/types";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Planner Sign In — BubVerseVacy" },
+      { title: "Planner Sign In, BubVerseVacy" },
       {
         name: "description",
         content:
           "Sign in or register as an event planner to publish events to the BubVerseVacy map.",
       },
-      { property: "og:title", content: "Planner Sign In — BubVerseVacy" },
+      { property: "og:title", content: "Planner Sign In, BubVerseVacy" },
       { property: "og:description", content: "Publish and manage your events on BubVerseVacy." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -276,7 +276,7 @@ function ForgotPasswordDialog() {
                     organizerName: result.organizer.name,
                     token: result.token,
                   });
-                  toast.success("Password updated — you're signed in.");
+                  toast.success("Password updated, you're signed in.");
                   setOpen(false);
                   void router.navigate({ to: "/planner" });
                 } catch (err) {

@@ -58,7 +58,7 @@ function PlannerOverview() {
           linkClicks: 0,
         };
         // History rows written before shareCount/linkClicks existed don't
-        // have those keys at all — fall back to 0 so one old row doesn't
+        // have those keys at all, fall back to 0 so one old row doesn't
         // NaN-poison the running total for its date (and everything after).
         row.pinClicks += h.pinClicks ?? 0;
         row.directionClicks += h.directionClicks ?? 0;

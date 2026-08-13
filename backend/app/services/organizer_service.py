@@ -149,7 +149,7 @@ def delete_cascade(organizer_id: str) -> None:
 
 def request_password_reset(email: str) -> None:
     """Always succeeds from the caller's perspective, whether or not the
-    email is registered — avoids leaking account existence to an attacker."""
+    email is registered, avoids leaking account existence to an attacker."""
     doc = _find_by_email(email or "")
     if doc is None:
         return

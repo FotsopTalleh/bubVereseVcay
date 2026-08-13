@@ -72,7 +72,7 @@ ORGANIZERS = [
 
 DEMO_IMAGE = "https://res.cloudinary.com/demo/image/upload/samples/people/kitchen-bar.jpg"
 
-# Cloudinary's public "demo" cloud — freely readable, no account/creds needed.
+# Cloudinary's public "demo" cloud, freely readable, no account/creds needed.
 # Used to give seeded events a small photo gallery for the detail-view carousel.
 _CLOUDINARY_DEMO = "https://res.cloudinary.com/demo/image/upload/"
 _GALLERY = {

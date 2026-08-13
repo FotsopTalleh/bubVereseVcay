@@ -5,13 +5,13 @@ import { useSession } from "@/hooks/useSession";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin Console — BubVerseVacy" },
+      { title: "Admin Console, BubVerseVacy" },
       {
         name: "description",
         content:
           "Verify organizers, moderate events and review platform-wide pin click and direction click analytics.",
       },
-      { property: "og:title", content: "Admin Console — BubVerseVacy" },
+      { property: "og:title", content: "Admin Console, BubVerseVacy" },
       {
         property: "og:description",
         content: "Governance, verification and analytics for the BubVerseVacy event map.",

@@ -74,14 +74,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "BubVerseVacy — Map-First Event Discovery" },
+      { title: "BubVerseVacy, Map-First Event Discovery" },
       {
         name: "description",
         content:
           "BubVerseVacy surfaces nearby events as flyer pins on a live map. Discover, filter and get directions without an account.",
       },
       { name: "author", content: "One Touch Technologies" },
-      { property: "og:title", content: "BubVerseVacy — Map-First Event Discovery" },
+      { property: "og:title", content: "BubVerseVacy, Map-First Event Discovery" },
       {
         property: "og:description",
         content: "Nearby events as flyer pins on a live map. No account needed.",

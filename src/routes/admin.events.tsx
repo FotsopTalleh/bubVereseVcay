@@ -169,7 +169,7 @@ function AdminEvents() {
             {logs.map((log) => (
               <li key={log.id} className="rounded-xl border bg-muted/40 px-3 py-2">
                 <p className="font-medium">
-                  {log.eventTitle} — {log.action}
+                  {log.eventTitle}, {log.action}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {new Date(log.at).toLocaleString()} · Reason: {log.reason}

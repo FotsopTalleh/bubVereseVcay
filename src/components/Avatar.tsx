@@ -9,7 +9,7 @@ function initialsOf(name: string | undefined | null): string {
   return initials || "?";
 }
 
-/** No real avatar-image field exists yet on Organizer — initials stand in for one.
+/** No real avatar-image field exists yet on Organizer, initials stand in for one.
  * `name` accepts undefined/null too: sessions persisted before this field
  * existed won't have it until the user logs in again, and this must never
  * crash the page in the meantime. */

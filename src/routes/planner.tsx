@@ -9,13 +9,13 @@ import type { Organizer } from "@/lib/types";
 export const Route = createFileRoute("/planner")({
   head: () => ({
     meta: [
-      { title: "Planner Dashboard — BubVerseVacy" },
+      { title: "Planner Dashboard, BubVerseVacy" },
       {
         name: "description",
         content:
           "Publish events to the map, manage your listings and track pin clicks and direction clicks over time.",
       },
-      { property: "og:title", content: "Planner Dashboard — BubVerseVacy" },
+      { property: "og:title", content: "Planner Dashboard, BubVerseVacy" },
       {
         property: "og:description",
         content: "Manage your events and measure pre-event interest.",

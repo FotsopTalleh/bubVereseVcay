@@ -192,7 +192,7 @@
   box-shadow: 0 6px 16px oklch(0 0 0 / 0.35);
 }
 
-/* Actively routing to this pin — same blue as the route line, thicker. */
+/* Actively routing to this pin, same blue as the route line, thicker. */
 .bv-pin[data-routing="true"] {
   border-width: 4px;
   border-color: var(--color-primary);
@@ -269,7 +269,7 @@
   }
 }
 
-/** Active-tab indicator on the planner's mobile bottom nav — same pulse as
+/** Active-tab indicator on the planner's mobile bottom nav, same pulse as
  * the live-location dot, just smaller. */
 .bv-nav-dot {
   position: relative;
@@ -290,7 +290,7 @@
   animation: bv-user-dot-pulse 1.8s ease-out infinite;
 }
 
-/** Continuous "breathing" glow on the planner's New Event FAB — a fluid,
+/** Continuous "breathing" glow on the planner's New Event FAB, a fluid,
  * always-alive cue rather than a static button. */
 .bv-fab-pulse {
   position: absolute;

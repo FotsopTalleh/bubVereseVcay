@@ -14,7 +14,7 @@ import "@/lib/leaflet-icon-fix";
 import type { EventPinSummary } from "@/lib/types";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_URL, TILE_ATTRIBUTION } from "./mapConfig";
 
-/** [south, west, north, east] — matches the backend's `bounds` query param order. */
+/** [south, west, north, east], matches the backend's `bounds` query param order. */
 export type Bbox = [south: number, west: number, north: number, east: number];
 
 type Props<T extends EventPinSummary> = {
@@ -154,7 +154,7 @@ export function EventMap<T extends EventPinSummary>({
   );
 }
 
-// Default export so it can be `React.lazy`-loaded — this module (and its
+// Default export so it can be `React.lazy`-loaded, this module (and its
 // leaflet/react-leaflet imports) must never be pulled into the SSR bundle,
 // since Leaflet touches `window` at module-evaluation time. See PublicEventMap.tsx.
 export default EventMap;

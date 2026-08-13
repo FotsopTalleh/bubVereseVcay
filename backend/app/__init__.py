@@ -9,7 +9,7 @@ from flask_limiter.util import get_remote_address
 load_dotenv()
 
 # Module-level so route modules can `from app import limiter` and apply
-# @limiter.limit(...) — safe because create_app() only imports routes (which
+# @limiter.limit(...), safe because create_app() only imports routes (which
 # do that import) after this module has already finished executing once.
 limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
 

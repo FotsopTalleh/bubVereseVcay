@@ -36,7 +36,7 @@ def verify_token(token: str) -> dict:
 
 
 def issue_password_reset_ticket(organizer_id: str) -> str:
-    """Short-lived, single-purpose token proving a reset code was verified —
+    """Short-lived, single-purpose token proving a reset code was verified ,
     distinct from a login token via the `purpose` claim."""
     now = datetime.now(timezone.utc)
     claims = {

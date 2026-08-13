@@ -16,7 +16,7 @@ type Props = {
 };
 
 // Recurring pointer for signed-out visitors: pops up, holds long enough to
-// read, then hides — and repeats for as long as no one's signed in. Not a
+// read, then hides, and repeats for as long as no one's signed in. Not a
 // one-time dismiss, so nothing is persisted to localStorage.
 const HINT_INTERVAL_MS = 20_000;
 const HINT_VISIBLE_MS = 5_000;
@@ -59,7 +59,7 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
   }, [hintVariant]);
 
   // The hint is portaled to <body> (see below) so it can't get trapped
-  // behind the category chips — their `surface-frost` backdrop-filter blur
+  // behind the category chips, their `surface-frost` backdrop-filter blur
   // forces its own compositing pass that mobile browsers routinely paint
   // above absolutely-positioned siblings, z-index be damned. Portaling means
   // its position has to be tracked in viewport coordinates by hand.
@@ -149,7 +149,7 @@ export function MapControls({ query, onQuery, selected, onToggle, onClear }: Pro
               className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 rounded-[2px] bg-primary"
             />
             {/* Stretched-link pattern: the whole card is the tap target, not
-             * just the underlined phrase — a `<button>` can't nest inside
+             * just the underlined phrase, a `<button>` can't nest inside
              * this `<a>`, so the dismiss button is a sibling positioned on
              * top instead, which also sidesteps any click-bubbling concern. */}
             <Link

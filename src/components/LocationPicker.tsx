@@ -11,7 +11,7 @@ type Props = {
   onChange: (lat: number, lng: number) => void;
 };
 
-// Custom divIcon instead of Leaflet's default marker image — consistent with
+// Custom divIcon instead of Leaflet's default marker image, consistent with
 // every other pin in the app, draggable-looking, and sidesteps any bundler
 // asset-path fragility around Leaflet's default PNG icons.
 const DROP_PIN_ICON = L.divIcon({
@@ -75,6 +75,6 @@ export function LocationPicker({ lat, lng, focusCenter, onChange }: Props) {
   );
 }
 
-// Default export so it can be `React.lazy`-loaded — must never be pulled into
+// Default export so it can be `React.lazy`-loaded, must never be pulled into
 // the SSR bundle (Leaflet touches `window` at module-evaluation time).
 export default LocationPicker;

@@ -1,4 +1,4 @@
-/** Buea, Cameroon — fallback center when geolocation is denied/unavailable. */
+/** Buea, Cameroon, fallback center when geolocation is denied/unavailable. */
 export const DEFAULT_CENTER: [number, number] = [4.156, 9.2632];
 
 export const DEFAULT_ZOOM = 11.5;
@@ -13,7 +13,7 @@ export const TILE_ATTRIBUTION =
 
 export type Town = { name: string; center: [number, number] };
 
-/** Planner-facing town shortlist — picking one jumps the venue-location map
+/** Planner-facing town shortlist, picking one jumps the venue-location map
  * there before the planner drops the exact pin. */
 export const TOWNS: Town[] = [
   { name: "Buea", center: [4.156, 9.2632] },

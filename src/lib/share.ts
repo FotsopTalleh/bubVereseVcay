@@ -3,7 +3,7 @@ import { recordShare } from "./directions";
 export type ShareableEvent = { id: string; title: string };
 
 /** A shared link opens the app already pointed at this event's expanded
- * card — see the `?event=` search param handled in PublicEventMap. */
+ * card, see the `?event=` search param handled in PublicEventMap. */
 export function buildShareUrl(eventId: string): string {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   return `${origin}/?event=${encodeURIComponent(eventId)}`;
@@ -13,7 +13,7 @@ export function shareText(event: ShareableEvent): string {
   return `Check out "${event.title}" on BubVerseVacy`;
 }
 
-/** True when the Web Share API is available — mobile browsers mostly, plus
+/** True when the Web Share API is available, mobile browsers mostly, plus
  * a growing number of desktop ones. It hands the OS its own native share
  * sheet (every installed social app, messaging app, "copy link", etc.) for
  * free, so it's always preferred over the hand-rolled fallback menu. */
@@ -22,7 +22,7 @@ export function canUseNativeShare(): boolean {
 }
 
 /** Attempts the native share sheet. Returns false (without throwing) for
- * anything that isn't a genuine failure worth falling back for — the user
+ * anything that isn't a genuine failure worth falling back for, the user
  * cancelling the sheet is not an error. */
 export async function tryNativeShare(event: ShareableEvent): Promise<boolean> {
   if (!canUseNativeShare()) return false;
@@ -35,7 +35,7 @@ export async function tryNativeShare(event: ShareableEvent): Promise<boolean> {
     void recordShare(event.id);
     return true;
   } catch (err) {
-    // AbortError = user dismissed the sheet — not a failure, don't fall back.
+    // AbortError = user dismissed the sheet, not a failure, don't fall back.
     if (err instanceof Error && err.name === "AbortError") return true;
     return false;
   }

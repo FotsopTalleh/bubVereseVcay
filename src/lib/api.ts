@@ -5,7 +5,7 @@ const API_URL =
 const VISITOR_KEY = "bubversevacy.visitor";
 
 /** Anonymous per-browser id, only used server-side to debounce rapid repeat
- * pin/direction taps — not an identity or auth mechanism. */
+ * pin/direction taps, not an identity or auth mechanism. */
 function getVisitorId(): string {
   if (typeof window === "undefined") return "server";
   let id = window.localStorage.getItem(VISITOR_KEY);
