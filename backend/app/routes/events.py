@@ -38,7 +38,10 @@ def list_public():
     via ?bounds=south,west,north,east, optionally filtered by
     ?categories=A,B and ?q=keyword (spec §11: server-side, lean payload)."""
     events = event_service.list_public_summaries(
-        _parse_bounds(), _parse_categories(), request.args.get("q")
+        _parse_bounds(),
+        _parse_categories(),
+        request.args.get("q"),
+        detailed=request.args.get("view") == "list",
     )
     return jsonify(events)
 

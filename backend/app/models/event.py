@@ -64,6 +64,19 @@ def to_summary_dict(doc_id: str, data: dict) -> dict:
     }
 
 
+def to_list_dict(doc_id: str, data: dict) -> dict:
+    """Shape for the public list view (spec §11 sibling): summary fields plus
+    description/venueName/address so each row can render without a per-event
+    detail round trip, but still without images/rating/counters — those stay
+    behind the single-event detail fetch on "See more"."""
+    return {
+        **to_summary_dict(doc_id, data),
+        "description": data.get("description"),
+        "venueName": data.get("venueName"),
+        "address": data.get("address"),
+    }
+
+
 def to_detail_dict(doc_id: str, data: dict) -> dict:
     """Full public detail — summary fields plus description/venue/address."""
     return {

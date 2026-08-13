@@ -8,6 +8,7 @@ from app.models.event import (
     REQUIRED_FIELDS,
     to_detail_dict,
     to_dict,
+    to_list_dict,
     to_summary_dict,
 )
 from app.services.organizer_service import get_public_summary
@@ -130,10 +131,13 @@ def list_public_summaries(
     bounds: Optional[tuple],
     categories: Optional[list],
     q: Optional[str],
+    detailed: bool = False,
 ) -> list:
     """Published-only events, server-side filtered by viewport bounds,
     category list and title keyword — lean shape for the public map's pin
-    list (§11), each with a limited public organizer summary attached."""
+    list (§11), each with a limited public organizer summary attached.
+    Pass detailed=True (the list view) to also include description/
+    venueName/address so each row renders without a per-event fetch."""
     db = get_db()
     docs = db.collection(COLLECTION).where("status", "==", "Published").stream()
     rows = [(d.id, d.to_dict()) for d in docs]
@@ -154,7 +158,8 @@ def list_public_summaries(
         needle = q.strip().lower()
         rows = [(doc_id, data) for doc_id, data in rows if needle in (data.get("title") or "").lower()]
 
-    summaries = [to_summary_dict(doc_id, data) for doc_id, data in rows]
+    shape = to_list_dict if detailed else to_summary_dict
+    summaries = [shape(doc_id, data) for doc_id, data in rows]
     for summary in summaries:
         summary["organizer"] = get_public_summary(summary["organizerId"])
     return summaries

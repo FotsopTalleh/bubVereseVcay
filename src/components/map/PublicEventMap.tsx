@@ -1,9 +1,11 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ClientOnly, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { List as ListIcon, Map as MapIcon } from "lucide-react";
 import type { Bbox } from "@/components/map/EventMap";
 import { MapControls } from "@/components/map/MapControls";
 import { EventSheet } from "@/components/map/EventSheet";
+import { EventListView } from "@/components/map/EventListView";
 import { RoutePanel } from "@/components/map/RoutePanel";
 import { LocationPermissionDialog } from "@/components/map/LocationPermissionDialog";
 import { PoweredBy, Wordmark } from "@/components/brand";
@@ -14,8 +16,8 @@ import {
   recordLinkClick,
   recordPinClick,
 } from "@/lib/directions";
-import { fetchRoute, type RouteResult } from "@/lib/routing";
-import type { Category, EventPinSummary, PublicEventDetail } from "@/lib/types";
+import { fetchRoute, haversineMeters, type RouteResult } from "@/lib/routing";
+import type { Category, EventListSummary, EventPinSummary, PublicEventDetail } from "@/lib/types";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -47,6 +49,7 @@ export function PublicEventMap() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
+  const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [center, setCenter] = useState<[number, number] | undefined>(undefined);
@@ -57,6 +60,8 @@ export function PublicEventMap() {
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const hasRecenteredRef = useRef(false);
+  const lastRouteOriginRef = useRef<[number, number] | null>(null);
+  const lastRouteFetchAtRef = useRef(0);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [locationRetrying, setLocationRetrying] = useState(false);
   const [locationRetryFailed, setLocationRetryFailed] = useState(false);
@@ -185,6 +190,23 @@ export function PublicEventMap() {
     placeholderData: (previous) => previous,
   });
 
+  // Same bounds/category/query filters as the map's pin query, but with the
+  // description/venueName/address list cards need — the map's pin query
+  // deliberately omits those (see EventPinSummary), so list view keeps the
+  // map mounted (for bounds tracking) and just fetches its own shape,
+  // only while it's actually the active view.
+  const { data: listEvents = [] } = useQuery({
+    queryKey: ["public-events-list", bounds?.join(",") ?? "unset", categoriesKey, debouncedQuery],
+    queryFn: () => {
+      const params = new URLSearchParams({ bounds: bounds!.join(","), view: "list" });
+      if (selectedCategories.length > 0) params.set("categories", categoriesKey);
+      if (debouncedQuery) params.set("q", debouncedQuery);
+      return api.get<EventListSummary[]>(`/events/?${params.toString()}`);
+    },
+    enabled: bounds !== null && viewMode === "list",
+    placeholderData: (previous) => previous,
+  });
+
   const activeEvent =
     events.find((e) => e.id === activeId) ??
     (deepLinkedEvent?.id === activeId ? deepLinkedEvent : null);
@@ -201,15 +223,29 @@ export function PublicEventMap() {
     setExpanded(false);
   };
 
+  // List view's image/See more open straight to the expanded card, the same
+  // place tapping a map pin's own "See more" leads — the list card already
+  // shows what the map's collapsed preview shows, so there's no in-between
+  // collapsed state to land on here.
+  const handleSeeMoreFromList = (event: EventListSummary) => {
+    setActiveId(event.id);
+    setExpanded(true);
+  };
+
   const clearRoute = () => {
     setRoute(null);
     setRouteTarget(null);
     setRouteError(null);
     setRouteLoading(false);
+    lastRouteOriginRef.current = null;
+    lastRouteFetchAtRef.current = 0;
   };
 
   const handleDirections = async (target: EventPinSummary) => {
     void recordDirectionClick(target.id);
+    // Directions only ever make sense over the map, so a list-view card's
+    // Get Directions button lands here too — switch back automatically.
+    setViewMode("map");
     // Dismiss the preview card immediately — the route panel takes over.
     setActiveId(null);
     setExpanded(false);
@@ -231,7 +267,10 @@ export function PublicEventMap() {
     }
     setRouteLoading(true);
     try {
-      setRoute(await fetchRoute(origin, [target.lat, target.lng]));
+      const result = await fetchRoute(origin, [target.lat, target.lng]);
+      setRoute(result);
+      lastRouteOriginRef.current = origin;
+      lastRouteFetchAtRef.current = Date.now();
     } catch {
       setRoute(null);
       setRouteError("Couldn't calculate a route right now.");
@@ -239,6 +278,34 @@ export function PublicEventMap() {
       setRouteLoading(false);
     }
   };
+
+  // Keeps the active route's distance/time live as the user moves, instead
+  // of freezing at whatever was true the moment "Get Directions" was tapped.
+  // Throttled on both distance-moved and elapsed time so a normal walking/
+  // driving pace re-routes every ~10-20s rather than hammering the public
+  // OSRM instance (routing.ts) on every watchPosition tick.
+  const MIN_REROUTE_MOVE_M = 30;
+  const MIN_REROUTE_INTERVAL_MS = 12_000;
+  useEffect(() => {
+    if (!routeTarget || !liveLocation) return;
+    const lastOrigin = lastRouteOriginRef.current;
+    const movedEnough =
+      !lastOrigin || haversineMeters(lastOrigin, liveLocation) > MIN_REROUTE_MOVE_M;
+    const dueForRefresh = Date.now() - lastRouteFetchAtRef.current > MIN_REROUTE_INTERVAL_MS;
+    if (!movedEnough || !dueForRefresh) return;
+
+    lastRouteOriginRef.current = liveLocation;
+    lastRouteFetchAtRef.current = Date.now();
+    void (async () => {
+      try {
+        const updated = await fetchRoute(liveLocation, [routeTarget.lat, routeTarget.lng]);
+        setRoute(updated);
+      } catch {
+        // Transient refresh failure — keep showing the last good route
+        // rather than surfacing an error over a route that still works.
+      }
+    })();
+  }, [liveLocation, routeTarget]);
 
   const toggleCategory = (category: Category) =>
     setSelectedCategories((prev) =>
@@ -263,6 +330,21 @@ export function PublicEventMap() {
         </Suspense>
       </ClientOnly>
 
+      {/* List view sits as an opaque overlay above the (still-mounted) map,
+          rather than unmounting it — Leaflet keeps tracking bounds so the
+          pin query stays warm and toggling back to map view is instant. */}
+      {viewMode === "list" && (
+        <div className="absolute inset-0 z-[1] overflow-y-auto bg-background pb-20 pt-28">
+          <div className="px-3">
+            <EventListView
+              events={listEvents}
+              onDirections={(event) => void handleDirections(event)}
+              onSeeMore={handleSeeMoreFromList}
+            />
+          </div>
+        </div>
+      )}
+
       <MapControls
         query={query}
         onQuery={setQuery}
@@ -270,6 +352,19 @@ export function PublicEventMap() {
         onToggle={toggleCategory}
         onClear={() => setSelectedCategories([])}
       />
+
+      <button
+        type="button"
+        onClick={() => setViewMode((mode) => (mode === "map" ? "list" : "map"))}
+        aria-label={viewMode === "map" ? "Switch to list view" : "Switch to map view"}
+        className="surface-frost pointer-events-auto absolute left-3 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full p-3 shadow-sm"
+      >
+        {viewMode === "map" ? (
+          <ListIcon className="h-5 w-5" aria-hidden="true" />
+        ) : (
+          <MapIcon className="h-5 w-5" aria-hidden="true" />
+        )}
+      </button>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-between p-3" />
 
@@ -311,9 +406,23 @@ export function PublicEventMap() {
         />
       )}
 
-      {bounds && events.length === 0 && (
-        <div className="surface-frost pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-xl px-4 py-3 text-sm text-muted-foreground shadow-sm">
-          No events match the current filters.
+      {bounds && (viewMode === "list" ? listEvents.length === 0 : events.length === 0) && (
+        <div className="surface-frost pointer-events-auto absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-xl px-4 py-3 text-center text-sm text-muted-foreground shadow-sm">
+          {selectedCategories.length > 0 ? (
+            <>
+              No {selectedCategories.join("/")} events here right now — but there are other events
+              in this area you can try.
+              <button
+                type="button"
+                onClick={() => setSelectedCategories([])}
+                className="mt-1 block w-full font-medium text-primary hover:underline"
+              >
+                Clear filter
+              </button>
+            </>
+          ) : (
+            "No events match the current filters."
+          )}
         </div>
       )}
 

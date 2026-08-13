@@ -143,3 +143,13 @@ export type PublicEventDetail = EventPinSummary & {
   images: string[];
   rating: number | null;
 };
+
+/** Shape returned by GET /events/?view=list — summary fields plus
+ * description/venueName/address so list-view cards render without a
+ * per-event detail fetch. No images/rating; "See more" still fetches
+ * PublicEventDetail for those. */
+export type EventListSummary = EventPinSummary & {
+  description: string;
+  venueName: string;
+  address: string;
+};
