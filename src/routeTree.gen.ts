@@ -14,6 +14,8 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PlannerRouteImport } from './routes/planner'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as CityEventsRouteImport } from './routes/$city.events'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminOrganizersRouteImport } from './routes/admin.organizers'
@@ -21,7 +23,9 @@ import { Route as PlannerIndexRouteImport } from './routes/planner.index'
 import { Route as PlannerEventsRouteImport } from './routes/planner.events'
 import { Route as PlannerNewEventRouteImport } from './routes/planner.new-event'
 import { Route as PlannerProfileRouteImport } from './routes/planner.profile'
+import { Route as EventsCitySlugRouteImport } from './routes/events.$city.$slug'
 import { Route as PlannerEditEventIdRouteImport } from './routes/planner.edit.$eventId'
+import { Route as EventsCityCategoryCategoryRouteImport } from './routes/events.$city.category.$category'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +50,16 @@ const AuthRoute = AuthRouteImport.update({
 const PlannerRoute = PlannerRouteImport.update({
   id: '/planner',
   path: '/planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CityEventsRoute = CityEventsRouteImport.update({
+  id: '/$city/events',
+  path: '/$city/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -83,11 +97,22 @@ const PlannerProfileRoute = PlannerProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => PlannerRoute,
 } as any)
+const EventsCitySlugRoute = EventsCitySlugRouteImport.update({
+  id: '/events/$city/$slug',
+  path: '/events/$city/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlannerEditEventIdRoute = PlannerEditEventIdRouteImport.update({
   id: '/edit/$eventId',
   path: '/edit/$eventId',
   getParentRoute: () => PlannerRoute,
 } as any)
+const EventsCityCategoryCategoryRoute =
+  EventsCityCategoryCategoryRouteImport.update({
+    id: '/events/$city/category/$category',
+    path: '/events/$city/category/$category',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,6 +120,8 @@ export interface FileRoutesByFullPath {
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/planner': typeof PlannerRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$city/events': typeof CityEventsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/organizers': typeof AdminOrganizersRoute
   '/planner/events': typeof PlannerEventsRoute
@@ -102,12 +129,16 @@ export interface FileRoutesByFullPath {
   '/planner/profile': typeof PlannerProfileRoute
   '/admin/': typeof AdminIndexRoute
   '/planner/': typeof PlannerIndexRoute
+  '/events/$city/$slug': typeof EventsCitySlugRoute
   '/planner/edit/$eventId': typeof PlannerEditEventIdRoute
+  '/events/$city/category/$category': typeof EventsCityCategoryCategoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$city/events': typeof CityEventsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/organizers': typeof AdminOrganizersRoute
   '/planner/events': typeof PlannerEventsRoute
@@ -115,7 +146,9 @@ export interface FileRoutesByTo {
   '/planner/profile': typeof PlannerProfileRoute
   '/admin': typeof AdminIndexRoute
   '/planner': typeof PlannerIndexRoute
+  '/events/$city/$slug': typeof EventsCitySlugRoute
   '/planner/edit/$eventId': typeof PlannerEditEventIdRoute
+  '/events/$city/category/$category': typeof EventsCityCategoryCategoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,6 +157,8 @@ export interface FileRoutesById {
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/planner': typeof PlannerRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$city/events': typeof CityEventsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/organizers': typeof AdminOrganizersRoute
   '/planner/events': typeof PlannerEventsRoute
@@ -131,7 +166,9 @@ export interface FileRoutesById {
   '/planner/profile': typeof PlannerProfileRoute
   '/admin/': typeof AdminIndexRoute
   '/planner/': typeof PlannerIndexRoute
+  '/events/$city/$slug': typeof EventsCitySlugRoute
   '/planner/edit/$eventId': typeof PlannerEditEventIdRoute
+  '/events/$city/category/$category': typeof EventsCityCategoryCategoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +178,8 @@ export interface FileRouteTypes {
     | '/admin-login'
     | '/auth'
     | '/planner'
+    | '/sitemap.xml'
+    | '/$city/events'
     | '/admin/events'
     | '/admin/organizers'
     | '/planner/events'
@@ -148,12 +187,16 @@ export interface FileRouteTypes {
     | '/planner/profile'
     | '/admin/'
     | '/planner/'
+    | '/events/$city/$slug'
     | '/planner/edit/$eventId'
+    | '/events/$city/category/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin-login'
     | '/auth'
+    | '/sitemap.xml'
+    | '/$city/events'
     | '/admin/events'
     | '/admin/organizers'
     | '/planner/events'
@@ -161,7 +204,9 @@ export interface FileRouteTypes {
     | '/planner/profile'
     | '/admin'
     | '/planner'
+    | '/events/$city/$slug'
     | '/planner/edit/$eventId'
+    | '/events/$city/category/$category'
   id:
     | '__root__'
     | '/'
@@ -169,6 +214,8 @@ export interface FileRouteTypes {
     | '/admin-login'
     | '/auth'
     | '/planner'
+    | '/sitemap.xml'
+    | '/$city/events'
     | '/admin/events'
     | '/admin/organizers'
     | '/planner/events'
@@ -176,7 +223,9 @@ export interface FileRouteTypes {
     | '/planner/profile'
     | '/admin/'
     | '/planner/'
+    | '/events/$city/$slug'
     | '/planner/edit/$eventId'
+    | '/events/$city/category/$category'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -185,6 +234,10 @@ export interface RootRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   AuthRoute: typeof AuthRoute
   PlannerRoute: typeof PlannerRouteWithChildren
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  CityEventsRoute: typeof CityEventsRoute
+  EventsCitySlugRoute: typeof EventsCitySlugRoute
+  EventsCityCategoryCategoryRoute: typeof EventsCityCategoryCategoryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -222,6 +275,20 @@ declare module '@tanstack/react-router' {
       path: '/planner'
       fullPath: '/planner'
       preLoaderRoute: typeof PlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$city/events': {
+      id: '/$city/events'
+      path: '/$city/events'
+      fullPath: '/$city/events'
+      preLoaderRoute: typeof CityEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -273,12 +340,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlannerProfileRouteImport
       parentRoute: typeof PlannerRoute
     }
+    '/events/$city/$slug': {
+      id: '/events/$city/$slug'
+      path: '/events/$city/$slug'
+      fullPath: '/events/$city/$slug'
+      preLoaderRoute: typeof EventsCitySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/planner/edit/$eventId': {
       id: '/planner/edit/$eventId'
       path: '/edit/$eventId'
       fullPath: '/planner/edit/$eventId'
       preLoaderRoute: typeof PlannerEditEventIdRouteImport
       parentRoute: typeof PlannerRoute
+    }
+    '/events/$city/category/$category': {
+      id: '/events/$city/category/$category'
+      path: '/events/$city/category/$category'
+      fullPath: '/events/$city/category/$category'
+      preLoaderRoute: typeof EventsCityCategoryCategoryRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -322,6 +403,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   AuthRoute: AuthRoute,
   PlannerRoute: PlannerRouteWithChildren,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  CityEventsRoute: CityEventsRoute,
+  EventsCitySlugRoute: EventsCitySlugRoute,
+  EventsCityCategoryCategoryRoute: EventsCityCategoryCategoryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
