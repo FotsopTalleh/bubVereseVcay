@@ -44,7 +44,7 @@ export function LocationPermissionDialog({
               : "BubVerseVacy uses your location to center the map near you and to calculate live directions to events."}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="sm:justify-center">
+        <DialogFooter className="gap-2 sm:justify-center">
           <Button variant="outline" onClick={onDismiss} className="sm:flex-1">
             Not now
           </Button>
