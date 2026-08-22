@@ -1,9 +1,9 @@
 import { haversineMeters } from "./routing";
 import { CATEGORIES, type Category, type EventListSummary } from "./types";
 
-/** Same-origin default: no custom domain is configured yet, so this is the
- * live Cloudflare Worker URL. Override via VITE_SITE_URL once a custom
- * domain exists, canonical/OG/JSON-LD URLs all key off this. */
+/** Production sets VITE_SITE_URL to the real domain (see .env.production);
+ * this fallback only matters for local dev/preview builds that don't set
+ * it. Canonical/OG/JSON-LD URLs all key off this. */
 export const SITE_URL =
   (import.meta.env["VITE_SITE_URL"] as string | undefined) ??
   "https://bubversevacy.preciousfotsop.workers.dev";

@@ -9,4 +9,4 @@ Disallow: /admin-login
 Disallow: /auth
 Disallow: /api/
 
-Sitemap: https://bubversevacy.preciousfotsop.workers.dev/sitemap.xml
+Sitemap: https://bubvrs.com/sitemap.xml
