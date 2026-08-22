@@ -11,12 +11,7 @@ import { RoutePanel } from "@/components/map/RoutePanel";
 import { LocationPermissionDialog } from "@/components/map/LocationPermissionDialog";
 import { PoweredBy, Wordmark } from "@/components/brand";
 import { api } from "@/lib/api";
-import {
-  openDirections,
-  recordDirectionClick,
-  recordLinkClick,
-  recordPinClick,
-} from "@/lib/directions";
+import { openDirections, recordDirectionClick, recordPinClick } from "@/lib/directions";
 import { fetchRoute, haversineMeters, type RouteResult } from "@/lib/routing";
 import type { Category, EventListSummary, EventPinSummary, PublicEventDetail } from "@/lib/types";
 
@@ -191,7 +186,11 @@ export function PublicEventMap() {
         setActiveId(detail.id);
         setExpanded(true);
         queryClient.setQueryData(["public-event-detail", detail.id], detail);
-        void recordLinkClick(detail.id);
+        // No recordLinkClick here: fresh shares land on the event's SEO page
+        // first (events.$city.$slug.tsx), which is where the "opened" click
+        // is now counted, this deep link is either that page's own "View on
+        // map" click-through (would double-count the same visit) or a
+        // pre-existing bookmarked/shared link from before that page existed.
       } catch {
         /* Bad or removed event id in the link, fall back to the default map silently. */
       } finally {

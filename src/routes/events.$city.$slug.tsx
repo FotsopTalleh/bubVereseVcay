@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import { createFileRoute, notFound, redirect, Link } from "@tanstack/react-router";
 import { CalendarDays, MapPin, Tag } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import { formatTimeRange } from "@/lib/directions";
+import { formatTimeRange, recordLinkClick } from "@/lib/directions";
 import { api } from "@/lib/api";
 import {
   CITIES,
@@ -82,6 +83,15 @@ function EventSeoPage() {
   const cityName = CITIES[city].name;
   const verified = event.organizer?.status === "Verified";
   const mapDeepLink = `/?event=${encodeURIComponent(event.id)}`;
+
+  // Client-side only, so it fires for a real visitor's browser and not for
+  // WhatsApp/Facebook/Google fetching this page server-side to build a link
+  // preview or crawl it. This is the one place shared-link opens get
+  // counted now, see PublicEventMap.tsx's ?event= handler for why it
+  // doesn't also count here (would double-count the "View on map" hop).
+  useEffect(() => {
+    void recordLinkClick(event.id);
+  }, [event.id]);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
