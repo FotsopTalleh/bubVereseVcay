@@ -81,6 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "BubVerseVacy surfaces nearby events as flyer pins on a live map. Discover, filter and get directions without an account.",
       },
       { name: "author", content: "One Touch Technologies" },
+      { name: "google-site-verification", content: "kD8DHD1bHLICYGx05BmjHzKeWsvA9OgxZjdflR7t8BE" },
       { property: "og:title", content: "BubVerseVacy, Map-First Event Discovery" },
       {
         property: "og:description",
