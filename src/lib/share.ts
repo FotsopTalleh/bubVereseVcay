@@ -1,12 +1,16 @@
 import { recordShare } from "./directions";
+import { absoluteUrl, eventPathParts } from "./seo";
 
-export type ShareableEvent = { id: string; title: string };
+export type ShareableEvent = { id: string; title: string; lat: number; lng: number };
 
-/** A shared link opens the app already pointed at this event's expanded
- * card, see the `?event=` search param handled in PublicEventMap. */
-export function buildShareUrl(eventId: string): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}/?event=${encodeURIComponent(eventId)}`;
+/** Shared links point at the event's own SEO page (real title/description/
+ * flyer image via OG tags, see routes/events.$city.$slug.tsx), not the bare
+ * `/?event=` SPA deep link, that route has no per-event OG image at all, so
+ * WhatsApp/Facebook previews fell back to the site favicon. The SEO page
+ * has its own "View on map" button that lands on the live app anyway. */
+export function buildShareUrl(event: ShareableEvent): string {
+  const { city, slug } = eventPathParts(event);
+  return absoluteUrl(`/events/${city}/${slug}`);
 }
 
 export function shareText(event: ShareableEvent): string {
@@ -30,7 +34,7 @@ export async function tryNativeShare(event: ShareableEvent): Promise<boolean> {
     await navigator.share({
       title: event.title,
       text: shareText(event),
-      url: buildShareUrl(event.id),
+      url: buildShareUrl(event),
     });
     void recordShare(event.id);
     return true;
@@ -41,10 +45,10 @@ export async function tryNativeShare(event: ShareableEvent): Promise<boolean> {
   }
 }
 
-export async function copyShareLink(eventId: string): Promise<boolean> {
+export async function copyShareLink(event: ShareableEvent): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(buildShareUrl(eventId));
-    void recordShare(eventId);
+    await navigator.clipboard.writeText(buildShareUrl(event));
+    void recordShare(event.id);
     return true;
   } catch {
     return false;
@@ -55,17 +59,17 @@ const SOCIAL_LINKS = [
   {
     name: "WhatsApp",
     urlFor: (event: ShareableEvent) =>
-      `https://wa.me/?text=${encodeURIComponent(`${shareText(event)} ${buildShareUrl(event.id)}`)}`,
+      `https://wa.me/?text=${encodeURIComponent(`${shareText(event)} ${buildShareUrl(event)}`)}`,
   },
   {
     name: "Facebook",
     urlFor: (event: ShareableEvent) =>
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(buildShareUrl(event.id))}`,
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(buildShareUrl(event))}`,
   },
   {
     name: "X (Twitter)",
     urlFor: (event: ShareableEvent) =>
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(event))}&url=${encodeURIComponent(buildShareUrl(event.id))}`,
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(event))}&url=${encodeURIComponent(buildShareUrl(event))}`,
   },
 ] as const;
 

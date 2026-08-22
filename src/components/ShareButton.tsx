@@ -75,7 +75,7 @@ export function ShareButton({ event, variant = "icon", className }: Props) {
         <DropdownMenuItem
           onClick={() => {
             void (async () => {
-              const ok = await copyShareLink(event.id);
+              const ok = await copyShareLink(event);
               toast[ok ? "success" : "error"](ok ? "Link copied" : "Couldn't copy the link.");
             })();
           }}
