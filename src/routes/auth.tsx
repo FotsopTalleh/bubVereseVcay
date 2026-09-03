@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { PoweredBy, Wordmark } from "@/components/brand";
 import { GOOGLE_SIGN_IN_ENABLED, GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { PasswordInput } from "@/components/PasswordInput";
 import { PasswordStrength, passwordMeetsStrength } from "@/components/PasswordStrength";
 import { api, ApiError } from "@/lib/api";
 import { setSession } from "@/lib/session";
@@ -289,9 +290,8 @@ function ForgotPasswordDialog() {
           >
             <div className="space-y-2">
               <Label htmlFor="new-password">New password</Label>
-              <Input
+              <PasswordInput
                 id="new-password"
-                type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -341,9 +341,8 @@ function SignInForm({
           <Label htmlFor="password">Password</Label>
           <ForgotPasswordDialog />
         </div>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -426,9 +425,8 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="reg-password">Password</Label>
-          <Input
+          <PasswordInput
             id="reg-password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
