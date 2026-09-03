@@ -39,10 +39,14 @@ function PlannerLayout() {
 
   if (!ready) return null;
   if (!isPlanner) return <SignedOutNotice role="planner" />;
-  if (!organizer) return null;
 
+  // Deliberately doesn't wait on `organizer` before rendering Outlet: the
+  // child route's own data (e.g. planner/events) doesn't depend on it, and
+  // gating the whole shell on this fetch serialized two backend round trips
+  // (profile, then events) that should run in parallel. InitialsAvatar
+  // handles an undefined name until the profile fetch resolves.
   return (
-    <PlannerShell organizerName={organizer.name}>
+    <PlannerShell organizerName={organizer?.name}>
       <Outlet />
     </PlannerShell>
   );

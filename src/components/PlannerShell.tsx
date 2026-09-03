@@ -58,7 +58,7 @@ export function PlannerShell({
   organizerName,
   children,
 }: {
-  organizerName: string;
+  organizerName: string | undefined;
   children: ReactNode;
 }) {
   return (
