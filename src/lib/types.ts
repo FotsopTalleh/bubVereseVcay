@@ -87,6 +87,10 @@ export type EventRecord = {
   address: string;
   lat: number;
   lng: number;
+  /** Optional join link for an online/hybrid event, not required. */
+  onlineMeetingUrl?: string;
+  /** Optional attendance-form link organizers use to track check-ins, not required. */
+  attendanceFormUrl?: string;
   organizerId: string;
   pinClicks: number;
   directionClicks: number;
@@ -140,6 +144,8 @@ export type PublicEventDetail = EventPinSummary & {
   description: string;
   venueName: string;
   address: string;
+  onlineMeetingUrl?: string;
+  attendanceFormUrl?: string;
   images: string[];
   rating: number | null;
 };
@@ -152,4 +158,6 @@ export type EventListSummary = EventPinSummary & {
   description: string;
   venueName: string;
   address: string;
+  onlineMeetingUrl?: string;
+  attendanceFormUrl?: string;
 };

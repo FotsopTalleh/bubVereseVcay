@@ -61,6 +61,8 @@ def create_event(organizer_id: str, payload: dict) -> dict:
         "address": payload["address"].strip(),
         "lat": float(payload["lat"]),
         "lng": float(payload["lng"]),
+        "onlineMeetingUrl": (payload.get("onlineMeetingUrl") or "").strip(),
+        "attendanceFormUrl": (payload.get("attendanceFormUrl") or "").strip(),
         "organizerId": organizer_id,
         "pinClicks": 0,
         "directionClicks": 0,
@@ -90,6 +92,7 @@ def update_event(event_id: str, requester_organizer_id: Optional[str], patch: di
     editable = {
         "title", "flyerImageUrl", "images", "description", "category", "date", "startTime",
         "endTime", "venueName", "address", "lat", "lng", "status",
+        "onlineMeetingUrl", "attendanceFormUrl",
     }
     update = {k: v for k, v in patch.items() if k in editable}
     if "category" in update and update["category"] not in CATEGORIES:

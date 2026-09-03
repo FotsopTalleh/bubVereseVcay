@@ -157,6 +157,31 @@ function EventSeoPage() {
 
       <p className="mt-6 leading-relaxed">{event.description}</p>
 
+      {(event.onlineMeetingUrl || event.attendanceFormUrl) && (
+        <div className="mt-4 flex flex-wrap gap-3">
+          {event.onlineMeetingUrl && (
+            <a
+              href={event.onlineMeetingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
+            >
+              Join online
+            </a>
+          )}
+          {event.attendanceFormUrl && (
+            <a
+              href={event.attendanceFormUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
+            >
+              Attendance form
+            </a>
+          )}
+        </div>
+      )}
+
       {event.organizer && (
         <div className="mt-6 rounded-xl border bg-card p-4 text-sm">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Organizer</p>

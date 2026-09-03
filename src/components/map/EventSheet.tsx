@@ -230,6 +230,25 @@ export function EventSheet({
                     </div>
                   </div>
                 </dl>
+
+                {(detail.onlineMeetingUrl || detail.attendanceFormUrl) && (
+                  <div className="flex flex-wrap gap-2">
+                    {detail.onlineMeetingUrl && (
+                      <Button asChild size="sm" variant="outline">
+                        <a href={detail.onlineMeetingUrl} target="_blank" rel="noopener noreferrer">
+                          Join online
+                        </a>
+                      </Button>
+                    )}
+                    {detail.attendanceFormUrl && (
+                      <Button asChild size="sm" variant="outline">
+                        <a href={detail.attendanceFormUrl} target="_blank" rel="noopener noreferrer">
+                          Attendance form
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">

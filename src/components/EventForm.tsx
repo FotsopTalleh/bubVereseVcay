@@ -76,6 +76,8 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
   const [endTime, setEndTime] = useState(initial?.endTime ?? "22:00");
   const [venueName, setVenueName] = useState(initial?.venueName ?? "");
   const [address, setAddress] = useState(initial?.address ?? "");
+  const [onlineMeetingUrl, setOnlineMeetingUrl] = useState(initial?.onlineMeetingUrl ?? "");
+  const [attendanceFormUrl, setAttendanceFormUrl] = useState(initial?.attendanceFormUrl ?? "");
   const [images, setImages] = useState<string[]>(
     initial?.images && initial.images.length > 0
       ? initial.images
@@ -164,6 +166,8 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
           endTime,
           venueName,
           address,
+          onlineMeetingUrl: onlineMeetingUrl.trim(),
+          attendanceFormUrl: attendanceFormUrl.trim(),
           flyerImageUrl: images[0]!,
           images,
           status,
@@ -359,6 +363,44 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
             />
           </Suspense>
         </ClientOnly>
+      </section>
+
+      <section className="grid gap-4 rounded-2xl border bg-card p-5">
+        <div className="space-y-1">
+          <h2 className="text-sm font-semibold">Online (optional)</h2>
+          <p className="text-xs text-muted-foreground">
+            For hybrid or fully online events. Both links are optional and shown to attendees
+            alongside the venue.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="online-meeting-url">Online meeting link</Label>
+            <Input
+              id="online-meeting-url"
+              type="url"
+              placeholder="https://meet.google.com/..."
+              value={onlineMeetingUrl}
+              onChange={(e) => setOnlineMeetingUrl(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Lets attendees join the meeting directly from the event page.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="attendance-form-url">Attendance form link</Label>
+            <Input
+              id="attendance-form-url"
+              type="url"
+              placeholder="https://forms.gle/..."
+              value={attendanceFormUrl}
+              onChange={(e) => setAttendanceFormUrl(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              A form (e.g. Google Forms) for tracking who checked in.
+            </p>
+          </div>
+        </div>
       </section>
 
       <Button type="submit" size="lg" disabled={uploading}>
