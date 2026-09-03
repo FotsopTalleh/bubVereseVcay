@@ -63,6 +63,7 @@ def create_event(organizer_id: str, payload: dict) -> dict:
         "lng": float(payload["lng"]),
         "onlineMeetingUrl": (payload.get("onlineMeetingUrl") or "").strip(),
         "attendanceFormUrl": (payload.get("attendanceFormUrl") or "").strip(),
+        "isOnline": bool(payload.get("isOnline", False)),
         "organizerId": organizer_id,
         "pinClicks": 0,
         "directionClicks": 0,
@@ -92,9 +93,11 @@ def update_event(event_id: str, requester_organizer_id: Optional[str], patch: di
     editable = {
         "title", "flyerImageUrl", "images", "description", "category", "date", "startTime",
         "endTime", "venueName", "address", "lat", "lng", "status",
-        "onlineMeetingUrl", "attendanceFormUrl",
+        "onlineMeetingUrl", "attendanceFormUrl", "isOnline",
     }
     update = {k: v for k, v in patch.items() if k in editable}
+    if "isOnline" in update:
+        update["isOnline"] = bool(update["isOnline"])
     if "category" in update and update["category"] not in CATEGORIES:
         raise ApiError("Invalid category.")
     if "status" in update and update["status"] not in EVENT_STATUSES:

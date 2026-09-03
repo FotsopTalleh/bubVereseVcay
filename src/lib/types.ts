@@ -91,6 +91,9 @@ export type EventRecord = {
   onlineMeetingUrl?: string;
   /** Optional attendance-form link organizers use to track check-ins, not required. */
   attendanceFormUrl?: string;
+  /** When true, the venue/map fields hold a city-center fallback rather than
+   * a real address, see EventForm's onsite/online toggle. */
+  isOnline?: boolean;
   organizerId: string;
   pinClicks: number;
   directionClicks: number;
@@ -146,6 +149,7 @@ export type PublicEventDetail = EventPinSummary & {
   address: string;
   onlineMeetingUrl?: string;
   attendanceFormUrl?: string;
+  isOnline?: boolean;
   images: string[];
   rating: number | null;
 };
@@ -160,4 +164,5 @@ export type EventListSummary = EventPinSummary & {
   address: string;
   onlineMeetingUrl?: string;
   attendanceFormUrl?: string;
+  isOnline?: boolean;
 };

@@ -34,6 +34,7 @@ def to_dict(doc_id: str, data: dict) -> dict:
         "lng": data.get("lng"),
         "onlineMeetingUrl": data.get("onlineMeetingUrl") or "",
         "attendanceFormUrl": data.get("attendanceFormUrl") or "",
+        "isOnline": bool(data.get("isOnline", False)),
         "organizerId": data.get("organizerId"),
         "pinClicks": data.get("pinClicks", 0),
         "directionClicks": data.get("directionClicks", 0),
@@ -78,6 +79,7 @@ def to_list_dict(doc_id: str, data: dict) -> dict:
         "address": data.get("address"),
         "onlineMeetingUrl": data.get("onlineMeetingUrl") or "",
         "attendanceFormUrl": data.get("attendanceFormUrl") or "",
+        "isOnline": bool(data.get("isOnline", False)),
     }
 
 
@@ -90,6 +92,7 @@ def to_detail_dict(doc_id: str, data: dict) -> dict:
         "address": data.get("address"),
         "onlineMeetingUrl": data.get("onlineMeetingUrl") or "",
         "attendanceFormUrl": data.get("attendanceFormUrl") or "",
+        "isOnline": bool(data.get("isOnline", False)),
         "images": data.get("images") or [],
         "rating": data.get("rating"),
     }

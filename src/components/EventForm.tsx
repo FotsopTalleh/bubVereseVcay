@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -16,6 +17,7 @@ import {
 import { api, ApiError } from "@/lib/api";
 import { TOWNS } from "@/components/map/mapConfig";
 import { CATEGORIES, type Category, type EventRecord, type EventStatus } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 // Loaded only in the browser, see LocationPicker.tsx's default export.
 const LocationPicker = lazy(() => import("@/components/LocationPicker"));
@@ -88,7 +90,10 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
   const [status, setStatus] = useState<EventStatus>(initial?.status ?? "Published");
   const [lat, setLat] = useState<number | null>(initial?.lat ?? null);
   const [lng, setLng] = useState<number | null>(initial?.lng ?? null);
-  const [town, setTown] = useState("");
+  const [isOnline, setIsOnline] = useState(initial?.isOnline ?? false);
+  // Online events store the town name in "address" (see submit below), so
+  // editing one re-selects that town rather than leaving the field blank.
+  const [town, setTown] = useState(initial?.isOnline ? (initial?.address ?? "") : "");
   const [focusCenter, setFocusCenter] = useState<[number, number] | undefined>(undefined);
   const [uploadingCount, setUploadingCount] = useState(0);
   const uploading = uploadingCount > 0;
@@ -145,7 +150,13 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
       className="space-y-6"
       onSubmit={(e) => {
         e.preventDefault();
-        if (lat == null || lng == null) {
+        const townCenter = TOWNS.find((t) => t.name === town)?.center;
+        if (isOnline) {
+          if (!townCenter) {
+            toast.error("Select a town so this online event can be found by city.");
+            return;
+          }
+        } else if (lat == null || lng == null) {
           toast.error("Drop a pin on the map to set the venue location.");
           return;
         }
@@ -164,15 +175,16 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
           date,
           startTime,
           endTime,
-          venueName,
-          address,
-          onlineMeetingUrl: onlineMeetingUrl.trim(),
-          attendanceFormUrl: attendanceFormUrl.trim(),
+          venueName: isOnline ? "Online event" : venueName,
+          address: isOnline ? town : address,
+          onlineMeetingUrl: isOnline ? onlineMeetingUrl.trim() : "",
+          attendanceFormUrl: isOnline ? attendanceFormUrl.trim() : "",
+          isOnline,
           flyerImageUrl: images[0]!,
           images,
           status,
-          lat,
-          lng,
+          lat: isOnline ? townCenter![0] : lat!,
+          lng: isOnline ? townCenter![1] : lng!,
           organizerId,
         });
       }}
@@ -301,12 +313,23 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
       </section>
 
       <section className="grid gap-4 rounded-2xl border bg-card p-5">
-        <div className="space-y-1">
-          <h2 className="text-sm font-semibold">Location</h2>
-          <p className="text-xs text-muted-foreground">
-            Pick your town to jump the map there, then tap the map to drop a pin at the exact venue.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold">Location</h2>
+            <p className="text-xs text-muted-foreground">
+              {isOnline
+                ? "Pick a town so this event can still be found by city, then share the online links below."
+                : "Pick your town to jump the map there, then tap the map to drop a pin at the exact venue."}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Label htmlFor="online-toggle" className="text-xs font-normal">
+              {isOnline ? "Online" : "Onsite"}
+            </Label>
+            <Switch id="online-toggle" checked={isOnline} onCheckedChange={setIsOnline} />
+          </div>
         </div>
+
         <div className="space-y-2">
           <Label>Town</Label>
           <Select value={town} onValueChange={handleTownChange}>
@@ -322,83 +345,105 @@ export function EventForm({ organizerId, initial, submitLabel, onSubmit }: Props
             </SelectContent>
           </Select>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="venue">Venue name</Label>
-            <Input
-              id="venue"
-              placeholder='e.g. "Molyko Open Arena"'
-              value={venueName}
-              onChange={(e) => setVenueName(e.target.value)}
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              The name attendees will recognize, shown as the event&apos;s location title.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Physical address</Label>
-            <Input
-              id="address"
-              placeholder='e.g. "Molyko Street, Buea, Southwest Region"'
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Street or locality description, for people who don&apos;t know the venue by name.
-            </p>
-          </div>
-        </div>
-        <ClientOnly fallback={PICKER_FALLBACK}>
-          <Suspense fallback={PICKER_FALLBACK}>
-            <LocationPicker
-              lat={lat}
-              lng={lng}
-              focusCenter={focusCenter}
-              onChange={(nextLat, nextLng) => {
-                setLat(nextLat);
-                setLng(nextLng);
-              }}
-            />
-          </Suspense>
-        </ClientOnly>
-      </section>
 
-      <section className="grid gap-4 rounded-2xl border bg-card p-5">
-        <div className="space-y-1">
-          <h2 className="text-sm font-semibold">Online (optional)</h2>
-          <p className="text-xs text-muted-foreground">
-            For hybrid or fully online events. Both links are optional and shown to attendees
-            alongside the venue.
-          </p>
+        <div
+          className={cn(
+            "space-y-4 rounded-xl transition-opacity",
+            isOnline && "pointer-events-none opacity-40",
+          )}
+          aria-hidden={isOnline}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="venue">Venue name</Label>
+              <Input
+                id="venue"
+                placeholder='e.g. "Molyko Open Arena"'
+                value={venueName}
+                onChange={(e) => setVenueName(e.target.value)}
+                disabled={isOnline}
+                required={!isOnline}
+              />
+              <p className="text-xs text-muted-foreground">
+                The name attendees will recognize, shown as the event&apos;s location title.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Physical address</Label>
+              <Input
+                id="address"
+                placeholder='e.g. "Molyko Street, Buea, Southwest Region"'
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                disabled={isOnline}
+                required={!isOnline}
+              />
+              <p className="text-xs text-muted-foreground">
+                Street or locality description, for people who don&apos;t know the venue by name.
+              </p>
+            </div>
+          </div>
+          {isOnline ? (
+            <div className="h-72 w-full rounded-xl border bg-muted" />
+          ) : (
+            <ClientOnly fallback={PICKER_FALLBACK}>
+              <Suspense fallback={PICKER_FALLBACK}>
+                <LocationPicker
+                  lat={lat}
+                  lng={lng}
+                  focusCenter={focusCenter}
+                  onChange={(nextLat, nextLng) => {
+                    setLat(nextLat);
+                    setLng(nextLng);
+                  }}
+                />
+              </Suspense>
+            </ClientOnly>
+          )}
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="online-meeting-url">Online meeting link</Label>
-            <Input
-              id="online-meeting-url"
-              type="url"
-              placeholder="https://meet.google.com/..."
-              value={onlineMeetingUrl}
-              onChange={(e) => setOnlineMeetingUrl(e.target.value)}
-            />
+
+        <div
+          className={cn(
+            "space-y-4 rounded-xl border bg-muted/20 p-4 transition-opacity",
+            !isOnline && "pointer-events-none opacity-40",
+          )}
+          aria-hidden={!isOnline}
+        >
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold">Online details</h3>
             <p className="text-xs text-muted-foreground">
-              Lets attendees join the meeting directly from the event page.
+              Shown to attendees in place of a venue. The meeting link is optional.
             </p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="attendance-form-url">Attendance form link</Label>
-            <Input
-              id="attendance-form-url"
-              type="url"
-              placeholder="https://forms.gle/..."
-              value={attendanceFormUrl}
-              onChange={(e) => setAttendanceFormUrl(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              A form (e.g. Google Forms) for tracking who checked in.
-            </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="online-meeting-url">Online meeting link</Label>
+              <Input
+                id="online-meeting-url"
+                type="url"
+                placeholder="https://meet.google.com/..."
+                value={onlineMeetingUrl}
+                onChange={(e) => setOnlineMeetingUrl(e.target.value)}
+                disabled={!isOnline}
+              />
+              <p className="text-xs text-muted-foreground">
+                Lets attendees join the meeting directly from the event page.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="attendance-form-url">Attendance form link</Label>
+              <Input
+                id="attendance-form-url"
+                type="url"
+                placeholder="https://forms.gle/..."
+                value={attendanceFormUrl}
+                onChange={(e) => setAttendanceFormUrl(e.target.value)}
+                disabled={!isOnline}
+              />
+              <p className="text-xs text-muted-foreground">
+                A form (e.g. Google Forms) for tracking who checked in.
+              </p>
+            </div>
           </div>
         </div>
       </section>
